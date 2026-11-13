@@ -28,6 +28,10 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/\t/evil.com")).toBe("/painel");
     expect(safeNextPath("/\n/evil.com")).toBe("/painel");
   });
+  it("rejeita caminhos que viram protocol-relative ao normalizar", () => {
+    expect(safeNextPath("/..//evil.com")).toBe("/painel");
+    expect(safeNextPath("/.//evil.com")).toBe("/painel");
+  });
   it("usa /painel quando ausente", () => {
     expect(safeNextPath(null)).toBe("/painel");
   });

@@ -23,5 +23,8 @@ export function safeNextPath(next: string | null | undefined): string {
   const base = "http://salonix.invalid";
   const url = new URL(next, base);
   if (url.origin !== base) return DEFAULT_AFTER_LOGIN;
-  return url.pathname + url.search + url.hash;
+  const out = url.pathname + url.search + url.hash;
+  // A normalização pode produzir "//host" (ex.: "/..//host"): valida o resultado também.
+  if (!out.startsWith("/") || out.startsWith("//")) return DEFAULT_AFTER_LOGIN;
+  return out;
 }
