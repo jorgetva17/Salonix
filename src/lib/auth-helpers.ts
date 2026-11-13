@@ -17,8 +17,11 @@ export const DEFAULT_AFTER_LOGIN = "/painel";
 
 /** Aceita apenas caminhos internos, evitando redirecionamento para outros sites. */
 export function safeNextPath(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
-    return DEFAULT_AFTER_LOGIN;
-  }
-  return next;
+  // Caracteres de controle e "\" são descartados/convertidos pelo navegador e
+  // podem transformar "/\t/site.com" em "//site.com".
+  if (!next || !next.startsWith("/") || /[\x00-\x1f\x7f\\]/.test(next)) return DEFAULT_AFTER_LOGIN;
+  const base = "http://salonix.invalid";
+  const url = new URL(next, base);
+  if (url.origin !== base) return DEFAULT_AFTER_LOGIN;
+  return url.pathname + url.search + url.hash;
 }

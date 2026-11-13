@@ -24,6 +24,10 @@ describe("safeNextPath", () => {
     expect(safeNextPath("//evil.com")).toBe("/painel");
     expect(safeNextPath("/\\evil.com")).toBe("/painel");
   });
+  it("rejeita caracteres de controle que o navegador descarta", () => {
+    expect(safeNextPath("/\t/evil.com")).toBe("/painel");
+    expect(safeNextPath("/\n/evil.com")).toBe("/painel");
+  });
   it("usa /painel quando ausente", () => {
     expect(safeNextPath(null)).toBe("/painel");
   });
