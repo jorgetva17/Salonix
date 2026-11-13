@@ -11,6 +11,8 @@ import { getNavItems, isActivePath } from "@/lib/navigation";
 import { ROLE_LABELS } from "@/lib/invites";
 import type { Membership } from "@/lib/salon/membership";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import type { ThemePreference } from "@/components/theme/theme-provider";
 import { NavLinks } from "./nav-links";
 import { SalonSwitcher } from "./salon-switcher";
 
@@ -20,13 +22,12 @@ type Props = {
   userName: string;
   /** Logo do salão (ou padrão) para fundo escuro. */
   logo: ReactNode;
-  /** Controles de conta extras (ex.: tema). */
-  accountExtras?: ReactNode;
+  themePreference: ThemePreference;
   pendingInvites: number;
   children: ReactNode;
 };
 
-export function AppShell({ membership, memberships, userName, logo, accountExtras, pendingInvites, children }: Props) {
+export function AppShell({ membership, memberships, userName, logo, themePreference, pendingInvites, children }: Props) {
   return (
     <div className="flex min-h-dvh">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-sidebar px-4 py-6 text-sidebar-foreground md:flex">
@@ -41,7 +42,7 @@ export function AppShell({ membership, memberships, userName, logo, accountExtra
         <nav aria-label="Principal" className="flex-1">
           <NavLinks role={membership.role} />
         </nav>
-        <AccountBlock userName={userName} membership={membership} extras={accountExtras} tone="sidebar" />
+        <AccountBlock userName={userName} membership={membership} theme={themePreference} tone="sidebar" />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col md:pl-64">
@@ -60,7 +61,7 @@ export function AppShell({ membership, memberships, userName, logo, accountExtra
         <main className="flex-1 px-4 pt-6 pb-28 md:px-8 md:pb-10">{children}</main>
       </div>
 
-      <BottomNav membership={membership} memberships={memberships} userName={userName} extras={accountExtras} />
+      <BottomNav membership={membership} memberships={memberships} userName={userName} theme={themePreference} />
     </div>
   );
 }
@@ -68,12 +69,12 @@ export function AppShell({ membership, memberships, userName, logo, accountExtra
 function AccountBlock({
   userName,
   membership,
-  extras,
+  theme,
   tone,
 }: {
   userName: string;
   membership: Membership;
-  extras?: ReactNode;
+  theme: ThemePreference;
   tone: "sidebar" | "surface";
 }) {
   return (
@@ -82,7 +83,7 @@ function AccountBlock({
         <p className="truncate font-medium">{userName || "Minha conta"}</p>
         <p className="text-sm opacity-75">{ROLE_LABELS[membership.role]}</p>
       </div>
-      {extras}
+      <ThemeToggle initial={theme} tone={tone} />
       <form action={signOut}>
         <Button
           type="submit"
@@ -104,12 +105,12 @@ function BottomNav({
   membership,
   memberships,
   userName,
-  extras,
+  theme,
 }: {
   membership: Membership;
   memberships: Membership[];
   userName: string;
-  extras?: ReactNode;
+  theme: ThemePreference;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -162,7 +163,7 @@ function BottomNav({
               </DialogHeader>
               <SalonSwitcher memberships={memberships} activeSalonId={membership.salonId} />
               <NavLinks role={membership.role} onlySecondary tone="surface" onNavigate={() => setOpen(false)} />
-              <AccountBlock userName={userName} membership={membership} extras={extras} tone="surface" />
+              <AccountBlock userName={userName} membership={membership} theme={theme} tone="surface" />
             </DialogContent>
           </Dialog>
         </li>
