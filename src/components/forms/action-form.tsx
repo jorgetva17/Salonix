@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import type { FormState } from "@/app/(auth)/actions";
+import type { FormState } from "@/lib/action-result";
 
 export type FormFieldConfig = {
   name: string;

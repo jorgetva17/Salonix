@@ -3,6 +3,7 @@ import { ActionForm } from "@/components/forms/action-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentUser, getMemberships } from "@/lib/salon/active-salon";
+import { createServerClient } from "@/lib/supabase/server";
 import { createSalon, signOut } from "../actions";
 
 export const metadata = { title: "Criar salão · Salonix" };
@@ -11,6 +12,9 @@ export default async function OnboardingPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
   if ((await getMemberships()).length > 0) redirect("/painel");
+  const supabase = await createServerClient();
+  const { data: invites } = await supabase.rpc("my_pending_invites");
+  if (invites?.length) redirect("/convite/aceitar");
 
   const pendingSalonName = user.user_metadata?.pending_salon_name as string | undefined;
 

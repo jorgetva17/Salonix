@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="font-family: Arial, sans-serif; color: #1B3B4B; background: #f5f7f8; padding: 24px;">
+    <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px;">
+      <p style="font-size: 24px; font-weight: bold; margin: 0 0 24px;">Salonix</p>
+      <h1 style="font-size: 20px; margin: 0 0 12px;">Confirme seu e-mail</h1>
+      <p style="font-size: 16px; line-height: 1.5; margin: 0 0 24px;">Falta pouco! Confirme seu e-mail para começar a usar o Salonix.</p>
+      <p style="margin: 0 0 24px;">
+        <a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=signup"
+           style="display: inline-block; background: #1B3B4B; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Confirmar e-mail</a>
+      </p>
+      <p style="font-size: 13px; color: #5b6b73; margin: 0;">Se você não esperava este e-mail, pode ignorá-lo.</p>
+    </div>
+  </body>
+</html>

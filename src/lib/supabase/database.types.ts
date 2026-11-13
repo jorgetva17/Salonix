@@ -57,6 +57,26 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"salon_invites": {
+                  Row: {
+                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"id": string,"invited_by": string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"id"?: string,"invited_by"?: string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"id"?: string,"invited_by"?: string | null,"role"?: Database["public"]['Enums']["salon_role"],"salon_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "salon_invites_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"salon_members": {
                   Row: {
                     "active": boolean,"created_at": string,"id": string,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"updated_at": string,"user_id": string
@@ -97,7 +117,23 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "create_salon":
+            "accept_invite":
+{ Args: { "p_invite_id": string }; Returns: {
+              "active": boolean,
+"created_at": string,
+"id": string,
+"role": Database["public"]['Enums']["salon_role"],
+"salon_id": string,
+"updated_at": string,
+"user_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "salon_members"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_salon":
 { Args: { "p_name": string,"p_phone"?: string }; Returns: {
               "created_at": string,
 "id": string,
@@ -115,11 +151,22 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"current_confirmed_email":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"decline_invite":
+{ Args: { "p_invite_id": string }; Returns: undefined
+                           },
 "has_salon_role":
 { Args: { "p_roles": (Database["public"]['Enums']["salon_role"])[],"p_salon_id": string }; Returns: boolean
                            },
 "is_salon_member":
 { Args: { "p_salon_id": string }; Returns: boolean
+                           },
+"my_pending_invites":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,"id": string,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"salon_name": string
+            }[]
                            },
 "shares_salon_with":
 { Args: { "p_user_id": string }; Returns: boolean

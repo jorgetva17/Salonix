@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import type { ActionResult } from "@/lib/action-result";
+import type { FormState } from "@/lib/action-result";
 import { authErrorMessage, safeNextPath } from "@/lib/auth-helpers";
 import { createServerClient } from "@/lib/supabase/server";
 import {
@@ -12,8 +12,6 @@ import {
   signInSchema,
   signUpSchema,
 } from "@/lib/validation/auth";
-
-export type FormState = ActionResult | { ok: true; message: string } | null;
 
 const invalid = (fieldErrors: Record<string, string>): FormState => ({
   ok: false,
