@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(10);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -66,6 +66,22 @@ select lives_ok(
   format($$ set local role service_role; insert into storage.objects (bucket_id, name) values ('salon-logos', %L) $$,
          (select v from ids where k='salon_a') || '/light.png'),
   'servidor (service role) grava a logo');
+
+-- caminho da logo só pode apontar para a pasta do próprio salão
+reset role;
+select t.login((select v from ids where k='ana'));
+select throws_ok(
+  format($$ update public.salons set logo_dark_path = %L where id = %L $$,
+         (select v from ids where k='salon_b') || '/dark.png', (select v from ids where k='salon_a')),
+  '23514', null, 'não aponta logo para a pasta de outro salão');
+select throws_ok(
+  format($$ update public.salons set logo_light_path = %L where id = %L $$,
+         (select v from ids where k='salon_a') || '/../x.png', (select v from ids where k='salon_a')),
+  '23514', null, 'caminho fora do padrão é recusado');
+select lives_ok(
+  format($$ update public.salons set logo_light_path = %L where id = %L $$,
+         (select v from ids where k='salon_a') || '/light.png', (select v from ids where k='salon_a')),
+  'caminho do próprio salão é aceito');
 
 select * from finish();
 rollback;

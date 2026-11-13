@@ -11,3 +11,9 @@ set public = excluded.public,
 
 -- Sem policies para "authenticated" em storage.objects deste bucket: usuários não
 -- gravam direto pela API do Storage. A leitura pública dispensa policy de select.
+
+-- O caminho salvo no salão só pode ser o da própria pasta (o servidor apaga
+-- arquivos com service role a partir dele).
+alter table public.salons
+  add constraint salons_logo_light_path_own check (logo_light_path is null or logo_light_path = id::text || '/light.png'),
+  add constraint salons_logo_dark_path_own check (logo_dark_path is null or logo_dark_path = id::text || '/dark.png');

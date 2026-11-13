@@ -13,6 +13,8 @@ import { validateLogoFile } from "@/lib/validation/logo";
 const variantSchema = z.enum(["light", "dark"]);
 const column = { light: "logo_light_path", dark: "logo_dark_path" } as const;
 
+const logoPath = (salonId: string, variant: "light" | "dark") => `${salonId}/${variant}.png`;
+
 const logoUpdate = (variant: "light" | "dark", path: string | null) =>
   variant === "light" ? { logo_light_path: path } : { logo_dark_path: path };
 
@@ -34,7 +36,7 @@ export async function uploadSalonLogo(_prev: FormState, formData: FormData): Pro
   }
 
   // Usuários não gravam direto no bucket: o servidor envia depois de validar e converter.
-  const path = `${salon.id}/${variant.data}.png`;
+  const path = logoPath(salon.id, variant.data);
   const { error: uploadError } = await createAdminClient()
     .storage.from(LOGO_BUCKET)
     .upload(path, png, { contentType: "image/png", upsert: true });
@@ -56,9 +58,9 @@ export async function removeSalonLogo(variant: string): Promise<ActionResult> {
   const parsed = variantSchema.safeParse(variant);
   if (!parsed.success) return { ok: false, error: "Opção inválida." };
 
-  const path = salon[column[parsed.data]];
-  if (!path) return { ok: true };
-  await createAdminClient().storage.from(LOGO_BUCKET).remove([path]);
+  if (!salon[column[parsed.data]]) return { ok: true };
+  // Caminho montado no servidor (nunca lido do banco) antes de apagar com service role.
+  await createAdminClient().storage.from(LOGO_BUCKET).remove([logoPath(salon.id, parsed.data)]);
   const supabase = await createServerClient();
   const { error } = await supabase
     .from("salons")
