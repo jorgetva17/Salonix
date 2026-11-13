@@ -39,15 +39,15 @@ values ((select v from ids where k='salon_a'), (select v from ids where k='rec')
 select is((select public from storage.buckets where id = 'salon-logos'), true, 'bucket de logos é público para leitura');
 select is((select file_size_limit from storage.buckets where id = 'salon-logos'), 2097152::bigint, 'limite de 2 MB');
 
+select is((select allowed_mime_types from storage.buckets where id = 'salon-logos'),
+          array['image/png', 'image/jpeg'], 'bucket não aceita SVG');
+
+-- Escrita só pelo servidor (service role) depois de validar e converter a imagem.
 select t.login((select v from ids where k='ana'));
-select lives_ok(
+select throws_ok(
   format($$ insert into storage.objects (bucket_id, name) values ('salon-logos', %L) $$,
          (select v from ids where k='salon_a') || '/light.png'),
-  'admin grava logo do próprio salão');
-select lives_ok(
-  format($$ update storage.objects set name = name where bucket_id = 'salon-logos' and name = %L $$,
-         (select v from ids where k='salon_a') || '/light.png'),
-  'admin atualiza logo do próprio salão');
+  '42501', null, 'nem o admin grava direto no bucket');
 
 select t.login((select v from ids where k='rec'));
 select throws_ok(
@@ -60,9 +60,12 @@ select throws_ok(
   format($$ insert into storage.objects (bucket_id, name) values ('salon-logos', %L) $$,
          (select v from ids where k='salon_a') || '/dark.png'),
   '42501', null, 'admin de outro salão não grava no salão A');
-select throws_ok(
-  $$ insert into storage.objects (bucket_id, name) values ('salon-logos', 'nao-e-uuid/light.png') $$,
-  '42501', null, 'caminho fora do padrão é recusado');
+
+select t.logout();
+select lives_ok(
+  format($$ set local role service_role; insert into storage.objects (bucket_id, name) values ('salon-logos', %L) $$,
+         (select v from ids where k='salon_a') || '/light.png'),
+  'servidor (service role) grava a logo');
 
 select * from finish();
 rollback;

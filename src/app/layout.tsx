@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,6 +18,19 @@ const sourceSans = Source_Sans_3({
 export const metadata: Metadata = {
   title: "Salonix",
   description: "Gestão para barbearias e salões: agenda, caixa, estoque e equipe.",
+  applicationName: "Salonix",
+  appleWebApp: { capable: true, title: "Salonix", statusBarStyle: "default" },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1B3B4B" },
+    { media: "(prefers-color-scheme: dark)", color: "#0E1D24" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

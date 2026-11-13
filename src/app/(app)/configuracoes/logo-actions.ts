@@ -5,6 +5,8 @@ import { z } from "zod";
 import type { ActionResult, FormState } from "@/lib/action-result";
 import { requireRole } from "@/lib/salon/active-salon";
 import { LOGO_BUCKET } from "@/lib/salon/logo";
+import { normalizeLogo } from "@/lib/salon/normalize-logo";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
 import { validateLogoFile } from "@/lib/validation/logo";
 
@@ -24,17 +26,21 @@ export async function uploadSalonLogo(_prev: FormState, formData: FormData): Pro
   const check = validateLogoFile({ name: file.name, type: file.type, size: file.size, bytes });
   if (!check.ok) return { ok: false, error: check.error };
 
-  const supabase = await createServerClient();
-  const path = `${salon.id}/${variant.data}.${check.ext}`;
-  const { error: uploadError } = await supabase.storage
-    .from(LOGO_BUCKET)
-    .upload(path, bytes, { contentType: check.contentType, upsert: true });
+  let png: Buffer;
+  try {
+    png = await normalizeLogo(bytes);
+  } catch {
+    return { ok: false, error: "Não foi possível ler a imagem. Tente outro arquivo." };
+  }
+
+  // Usuários não gravam direto no bucket: o servidor envia depois de validar e converter.
+  const path = `${salon.id}/${variant.data}.png`;
+  const { error: uploadError } = await createAdminClient()
+    .storage.from(LOGO_BUCKET)
+    .upload(path, png, { contentType: "image/png", upsert: true });
   if (uploadError) return { ok: false, error: "Não foi possível enviar a imagem. Tente novamente." };
 
-  // Remove a versão anterior se a extensão mudou (ex.: trocou PNG por SVG).
-  const previous = salon[column[variant.data]];
-  if (previous && previous !== path) await supabase.storage.from(LOGO_BUCKET).remove([previous]);
-
+  const supabase = await createServerClient();
   const { error } = await supabase
     .from("salons")
     .update(logoUpdate(variant.data, path))
@@ -52,8 +58,8 @@ export async function removeSalonLogo(variant: string): Promise<ActionResult> {
 
   const path = salon[column[parsed.data]];
   if (!path) return { ok: true };
+  await createAdminClient().storage.from(LOGO_BUCKET).remove([path]);
   const supabase = await createServerClient();
-  await supabase.storage.from(LOGO_BUCKET).remove([path]);
   const { error } = await supabase
     .from("salons")
     .update(logoUpdate(parsed.data, null))

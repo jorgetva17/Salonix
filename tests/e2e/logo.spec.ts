@@ -27,4 +27,20 @@ test("admin envia logo do salão e ela aparece no menu; arquivo inválido é rec
   const response = await page.request.get((await sidebarLogo.getAttribute("src"))!);
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toBe("image/png");
+
+  // SVG é aceito, mas armazenado convertido em PNG.
+  const light = page.locator("form").filter({ hasText: "Para fundo claro" });
+  await light.getByLabel("Arquivo").setInputFiles({
+    name: "logo.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><rect width="300" height="100" fill="#1B3B4B"/></svg>',
+    ),
+  });
+  await light.getByRole("button", { name: "Enviar logo" }).click();
+  await expect(light.getByRole("status")).toHaveText("Logo atualizada.");
+  const lightSrc = await light.locator("img").getAttribute("src");
+  expect(lightSrc).toMatch(/\/light\.png\?v=\d+$/);
+  const lightRes = await page.request.get(lightSrc!);
+  expect(lightRes.headers()["content-type"]).toBe("image/png");
 });
