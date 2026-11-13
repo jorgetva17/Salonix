@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { SalonLogo } from "@/components/brand/salon-logo";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { needsPasswordSetup, ROLE_LABELS } from "@/lib/invites";
 import { getCurrentUser, getMemberships } from "@/lib/salon/active-salon";
+import { DEFAULT_LOGOS } from "@/lib/salon/logo";
 import { createServerClient } from "@/lib/supabase/server";
 import { AcceptInviteForm } from "./accept-client";
 
@@ -14,7 +16,9 @@ export default async function AcceptInvitePage() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-muted/40 px-4 py-10">
       <div className="flex w-full max-w-sm flex-col gap-4">
-        <p className="mb-4 text-center text-3xl font-semibold tracking-tight text-primary">Salonix</p>
+        <div className="mb-6 flex justify-center">
+          <SalonLogo logos={{ ...DEFAULT_LOGOS, darkNeedsPlate: false, custom: false }} alt="Salonix" className="max-h-24" />
+        </div>
         {user ? <Invites askPassword={needsPasswordSetup(user)} /> : <SignInFirst />}
       </div>
     </main>
