@@ -20,7 +20,7 @@ export default async function TeamPage() {
       .order("created_at"),
     supabase
       .from("salon_invites")
-      .select("id, email, role, created_at")
+      .select("id, email, role, created_at, expires_at")
       .eq("salon_id", salon.id)
       .eq("status", "pending")
       .order("created_at", { ascending: false }),
@@ -62,7 +62,10 @@ export default async function TeamPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{invite.email}</p>
                     <p className="text-sm text-muted-foreground">
-                      {ROLE_LABELS[invite.role]} · enviado em {formatDateTime(invite.created_at, salon.timezone)}
+                      {ROLE_LABELS[invite.role]} ·{" "}
+                      {new Date(invite.expires_at) < new Date()
+                        ? "vencido, convide de novo"
+                        : `enviado em ${formatDateTime(invite.created_at, salon.timezone)}`}
                     </p>
                   </div>
                   <RevokeInviteButton id={invite.id} />

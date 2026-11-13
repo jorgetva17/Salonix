@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(16);
 
 create schema t;
 create function t.create_user(p_email text, p_confirmed boolean default true) returns uuid language sql as $$
@@ -104,6 +104,17 @@ select t.login((select v from ids where k='carlos'));
 select lives_ok(format($$ select public.decline_invite(%L) $$, (select id from public.my_pending_invites() limit 1)),
                 'convidado recusa');
 select is((select count(*)::int from public.my_pending_invites()), 0, 'recusado sai da lista');
+
+-- convite vencido não aparece nem pode ser aceito
+select t.logout();
+insert into public.salon_invites (salon_id, email, role, expires_at)
+values ((select v from ids where k='salon_b'), 'carlos@exemplo.com', 'admin', now() - interval '1 minute');
+insert into ids select 'expired', id from public.salon_invites where expires_at < now();
+select t.login((select v from ids where k='carlos'));
+select is((select count(*)::int from public.my_pending_invites()), 0, 'convite vencido não aparece');
+select throws_ok(
+  format($$ select public.accept_invite(%L) $$, (select v from ids where k='expired')),
+  'P0001', 'Convite não encontrado.', 'convite vencido não pode ser aceito');
 
 select * from finish();
 rollback;

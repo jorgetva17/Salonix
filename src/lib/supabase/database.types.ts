@@ -59,14 +59,14 @@ isOneToOne: true
                   ]
                 },"salon_invites": {
                   Row: {
-                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"id": string,"invited_by": string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status": string,"updated_at": string
+                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"id"?: string,"invited_by"?: string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status"?: string,"updated_at"?: string
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"id"?: string,"invited_by"?: string | null,"role"?: Database["public"]['Enums']["salon_role"],"salon_id"?: string,"status"?: string,"updated_at"?: string
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"role"?: Database["public"]['Enums']["salon_role"],"salon_id"?: string,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

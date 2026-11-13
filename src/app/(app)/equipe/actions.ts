@@ -23,6 +23,14 @@ export async function inviteMember(_prev: FormState, formData: FormData): Promis
   const { email, role } = parsed.data;
 
   const supabase = await createServerClient();
+  // Convite vencido ainda conta como pendente no índice único: libera para reenviar.
+  await supabase
+    .from("salon_invites")
+    .update({ status: "revoked" })
+    .eq("salon_id", salon.id)
+    .eq("email", email)
+    .eq("status", "pending")
+    .lt("expires_at", new Date().toISOString());
   const { error } = await supabase.from("salon_invites").insert({ salon_id: salon.id, email, role });
   if (error) {
     return {

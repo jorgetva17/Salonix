@@ -9,6 +9,7 @@ create table public.salon_invites (
   invited_by uuid references auth.users (id) on delete set null default auth.uid(),
   accepted_by uuid references auth.users (id) on delete set null,
   accepted_at timestamptz,
+  expires_at timestamptz not null default now() + interval '7 days',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -82,7 +83,8 @@ as $$
   from public.salon_invites i
   join public.salons s on s.id = i.salon_id
   join auth.users u on u.id = auth.uid()
-  where i.status = 'pending' and i.email = lower(u.email) and u.email_confirmed_at is not null
+  where i.status = 'pending' and i.expires_at > now()
+    and i.email = lower(u.email) and u.email_confirmed_at is not null
   order by i.created_at;
 $$;
 
@@ -98,7 +100,7 @@ declare
   v_member public.salon_members;
 begin
   select * into v_invite from public.salon_invites
-  where id = p_invite_id and status = 'pending' and email = v_email
+  where id = p_invite_id and status = 'pending' and expires_at > now() and email = v_email
   for update;
   if not found then
     raise exception 'Convite não encontrado.';
