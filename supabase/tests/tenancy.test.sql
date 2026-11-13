@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(21);
 
 -- helpers locais (somem no rollback)
 create schema t;
@@ -41,9 +41,17 @@ select is((select slug from public.salons where id = (select v from ids where k=
 select is((select role::text from public.salon_members where salon_id = (select v from ids where k='salon_a') and user_id = (select v from ids where k='ana')), 'admin', 'criador vira admin');
 select is((select card_reconciliation or pix_webhook from public.feature_flags where salon_id = (select v from ids where k='salon_a')), false, 'feature flags desligadas');
 
--- admin adiciona recepção
+-- admin não adiciona membros diretamente (só via convite aceito)
+select throws_ok(
+  format($$ insert into public.salon_members (salon_id, user_id, role) values (%L, %L, 'reception') $$,
+         (select v from ids where k='salon_a'), (select v from ids where k='rec')),
+  '42501', null, 'admin não insere membro arbitrário');
+
+-- setup: recepção entra no salão A (como faria accept_invite)
+select t.logout();
 insert into public.salon_members (salon_id, user_id, role)
 values ((select v from ids where k='salon_a'), (select v from ids where k='rec'), 'reception');
+select t.login((select v from ids where k='ana'));
 
 select t.login((select v from ids where k='bia'));
 insert into ids select 'salon_b', id from public.create_salon('Barbearia São João');
@@ -71,12 +79,28 @@ select throws_ok(
          (select v from ids where k='salon_a'), (select v from ids where k='ana')),
   'P0001', 'O salão precisa de pelo menos um administrador ativo.', 'último admin não se rebaixa');
 
+-- vínculo não muda de salão nem de usuário
+select throws_ok(
+  format($$ update public.salon_members set user_id = %L where salon_id = %L and user_id = %L $$,
+         (select v from ids where k='bia'), (select v from ids where k='salon_a'), (select v from ids where k='rec')),
+  'P0001', 'Não é permitido alterar o salão ou o usuário de um vínculo.', 'user_id imutável');
+
 -- membro desativado perde acesso
 update public.salon_members set active = false
  where salon_id = (select v from ids where k='salon_a') and user_id = (select v from ids where k='rec');
+select is((select count(*)::int from public.profiles where id = (select v from ids where k='rec')), 1, 'admin ainda vê perfil do desativado');
 select t.login((select v from ids where k='rec'));
 select is(public.is_salon_member((select v from ids where k='salon_a')), false, 'desativado não é membro');
 select is((select count(*)::int from public.salons where id = (select v from ids where k='salon_a')), 0, 'desativado não vê salão');
+
+-- um colega comum não vê o perfil de quem foi desativado
+select t.logout();
+insert into ids values ('pro', t.create_user('pro@a.com'));
+insert into public.salon_members (salon_id, user_id, role)
+values ((select v from ids where k='salon_a'), (select v from ids where k='pro'), 'professional');
+select t.login((select v from ids where k='pro'));
+select is((select count(*)::int from public.profiles where id = (select v from ids where k='rec')), 0, 'colega não vê perfil de desativado');
+select is((select count(*)::int from public.profiles where id = (select v from ids where k='ana')), 1, 'colega vê perfil de membro ativo');
 
 -- toda tabela de public tem RLS
 select t.logout();

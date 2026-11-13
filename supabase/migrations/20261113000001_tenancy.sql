@@ -133,6 +133,7 @@ as $$
     from public.salon_members mine
     join public.salon_members theirs on theirs.salon_id = mine.salon_id
     where mine.user_id = auth.uid() and mine.active and theirs.user_id = p_user_id
+      and (theirs.active or mine.role = 'admin')
   );
 $$;
 
@@ -144,6 +145,9 @@ language plpgsql
 set search_path = ''
 as $$
 begin
+  if tg_op = 'UPDATE' and (new.salon_id <> old.salon_id or new.user_id <> old.user_id) then
+    raise exception 'Não é permitido alterar o salão ou o usuário de um vínculo.';
+  end if;
   if old.role = 'admin' and old.active
      and (tg_op = 'DELETE' or new.role <> 'admin' or not new.active)
      and exists (select 1 from public.salons where id = old.salon_id)
@@ -239,8 +243,8 @@ create policy "alterar o próprio perfil" on public.profiles
 create policy "membros veem a equipe" on public.salon_members
   for select to authenticated
   using (user_id = auth.uid() or public.is_salon_member(salon_id));
-create policy "admin adiciona membros" on public.salon_members
-  for insert to authenticated with check (public.has_salon_role(salon_id, '{admin}'));
+-- Sem policy de insert: vínculos só nascem por create_salon e accept_invite
+-- (security definer), nunca por inserção direta de um user_id arbitrário.
 create policy "admin altera membros" on public.salon_members
   for update to authenticated
   using (public.has_salon_role(salon_id, '{admin}'))
