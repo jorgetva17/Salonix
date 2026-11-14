@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useActionForm } from "@/components/forms/use-action-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -13,7 +14,7 @@ import { deleteCustomer, saveCustomer } from "./actions";
 export type CustomerData = { id: string; name: string; phone: string | null; notes: string | null };
 
 function CustomerForm({ customer, onDone }: { customer?: CustomerData; onDone: () => void }) {
-  const [state, action, pending] = useActionState(saveCustomer, null);
+  const [state, onSubmit, pending] = useActionForm(saveCustomer, null);
   const errors = state && !state.ok ? (state.fieldErrors ?? {}) : {};
 
   useEffect(() => {
@@ -25,7 +26,7 @@ function CustomerForm({ customer, onDone }: { customer?: CustomerData; onDone: (
 
   const prefix = customer ? `customer-${customer.id}` : "customer-new";
   return (
-    <form action={action} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       {customer && <input type="hidden" name="id" value={customer.id} />}
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name) || undefined}>

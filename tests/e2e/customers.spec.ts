@@ -34,6 +34,8 @@ test("recepção cadastra cliente, busca sem acento e por telefone, e vê aviso 
   await dialog.getByLabel("WhatsApp (opcional)").fill(phoneDigits);
   await dialog.getByRole("button", { name: "Salvar" }).click();
   await expect(dialog.getByText("Já existe um cliente com este telefone.")).toBeVisible();
+  await expect(dialog.getByLabel("Nome")).toHaveValue("Outra Pessoa");
+  await expect(dialog.getByLabel("WhatsApp (opcional)")).toHaveValue(phoneDigits);
 });
 
 test("busca sem resultado mostra estado vazio", async ({ page }) => {

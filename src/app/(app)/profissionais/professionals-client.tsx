@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useActionForm } from "@/components/forms/use-action-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -26,7 +27,7 @@ export function ProfessionalForm({
   professional?: ProfessionalFormData;
   onDone?: () => void;
 }) {
-  const [state, action, pending] = useActionState(saveProfessional, null);
+  const [state, onSubmit, pending] = useActionForm(saveProfessional, null);
   const [color, setColor] = useState<string>(professional?.color ?? PROFESSIONAL_COLORS[0]);
   const errors = state && !state.ok ? (state.fieldErrors ?? {}) : {};
 
@@ -39,7 +40,7 @@ export function ProfessionalForm({
 
   const prefix = professional ? `pro-${professional.id}` : "pro-new";
   return (
-    <form action={action} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       {professional && <input type="hidden" name="id" value={professional.id} />}
       <input type="hidden" name="color" value={color} />
       <FieldGroup>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useActionForm } from "@/components/forms/use-action-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ export function BlockForm({ professionalId }: { professionalId: string }) {
 }
 
 function BlockFormFields({ professionalId, onSaved }: { professionalId: string; onSaved: () => void }) {
-  const [state, action, pending] = useActionState(addScheduleBlock, null);
+  const [state, onSubmit, pending] = useActionForm(addScheduleBlock, null);
   const [allDay, setAllDay] = useState(true);
   const errors = state && !state.ok ? (state.fieldErrors ?? {}) : {};
 
@@ -31,7 +32,7 @@ function BlockFormFields({ professionalId, onSaved }: { professionalId: string; 
   }, [state, onSaved]);
 
   return (
-    <form action={action} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       <input type="hidden" name="professionalId" value={professionalId} />
       <FieldGroup>
         <Field data-invalid={Boolean(errors.kind) || undefined}>

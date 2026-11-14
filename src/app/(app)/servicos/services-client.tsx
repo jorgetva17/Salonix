@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useActionForm } from "@/components/forms/use-action-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,7 +24,7 @@ export type ServiceRowData = {
 const centsToInput = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
 
 function ServiceForm({ service, onDone }: { service?: ServiceRowData; onDone: () => void }) {
-  const [state, action, pending] = useActionState(saveService, null);
+  const [state, onSubmit, pending] = useActionForm(saveService, null);
   const errors = state && !state.ok ? (state.fieldErrors ?? {}) : {};
 
   useEffect(() => {
@@ -35,7 +36,7 @@ function ServiceForm({ service, onDone }: { service?: ServiceRowData; onDone: ()
 
   const prefix = service ? `service-${service.id}` : "service-new";
   return (
-    <form action={action} noValidate>
+    <form onSubmit={onSubmit} noValidate>
       {service && <input type="hidden" name="id" value={service.id} />}
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name) || undefined}>

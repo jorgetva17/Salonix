@@ -57,6 +57,8 @@ test("comissão inválida mostra mensagem no campo", async ({ page }) => {
   await dialog.getByLabel("Comissão padrão (%)").fill("120");
   await dialog.getByRole("button", { name: "Salvar" }).click();
   await expect(dialog.getByText("Entre 0 e 100%")).toBeVisible();
+  await expect(dialog.getByLabel("Nome")).toHaveValue("Teo");
+  await expect(dialog.getByLabel("Comissão padrão (%)")).toHaveValue("120");
 });
 
 test("profissional não acessa a tela de profissionais", async ({ page }) => {
@@ -96,4 +98,10 @@ test("admin define jornada, vê erro de sobreposição e cria férias", async ({
   await page.getByRole("button", { name: "Adicionar bloqueio" }).click();
   await expect(page.getByTestId("block-row")).toContainText("Férias");
   await expect(page.getByTestId("block-row")).toContainText("10/01/2030 a 20/01/2030");
+
+  await page.getByLabel("De", { exact: true }).fill("2030-02-10");
+  await page.getByLabel("Até", { exact: true }).fill("2030-02-05");
+  await page.getByRole("button", { name: "Adicionar bloqueio" }).click();
+  await expect(page.getByText("A data final deve ser igual ou depois da inicial")).toBeVisible();
+  await expect(page.getByLabel("De", { exact: true })).toHaveValue("2030-02-10");
 });

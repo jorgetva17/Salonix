@@ -35,6 +35,9 @@ test("preço inválido mostra mensagem no campo", async ({ page }) => {
   await dialog.getByLabel("Preço (R$)").fill("abc");
   await dialog.getByRole("button", { name: "Salvar" }).click();
   await expect(dialog.getByText("Informe um preço válido, ex.: 45,00")).toBeVisible();
+  // O que foi digitado continua no formulário depois do erro.
+  await expect(dialog.getByLabel("Nome")).toHaveValue("Barba");
+  await expect(dialog.getByLabel("Preço (R$)")).toHaveValue("abc");
 });
 
 test("recepção não acessa serviços", async ({ page }) => {
