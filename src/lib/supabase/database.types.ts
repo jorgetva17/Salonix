@@ -373,12 +373,93 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"assert_slot_available":
+{ Args: { "p_ends_at": string,"p_professional_id": string,"p_starts_at": string,"p_timezone": string }; Returns: undefined
+                           },
+"can_act_on_appointment":
+{ Args: { "p_professional_id": string,"p_salon_id": string }; Returns: boolean
+                           },
 "can_see_appointment":
 { Args: { "p_kind": string,"p_professional_id": string,"p_salon_id": string,"p_status": string }; Returns: boolean
                            },
+"cancel_appointment":
+{ Args: { "p_appointment_id": string,"p_reason"?: string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "commission_percent_for":
 { Args: { "p_professional_id": string,"p_service_id": string }; Returns: number
                            },
+"complete_appointment":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_appointment":
+{ Args: { "p_customer_id": string,"p_notes"?: string,"p_professional_id": string,"p_salon_id": string,"p_service_ids": (string)[],"p_starts_local": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "create_salon":
 { Args: { "p_name": string,"p_phone"?: string }; Returns: {
               "created_at": string,
@@ -424,12 +505,65 @@ isOneToOne: false
 "has_salon_role":
 { Args: { "p_roles": (Database["public"]['Enums']["salon_role"])[],"p_salon_id": string }; Returns: boolean
                            },
+"insert_service_items":
+{ Args: { "p_appointment_id": string,"p_salon_id": string,"p_service_ids": (string)[] }; Returns: undefined
+                           },
 "is_salon_member":
 { Args: { "p_salon_id": string }; Returns: boolean
                            },
 "link_professional_user":
 { Args: { "p_professional_id": string,"p_user_id": string }; Returns: undefined
                            },
+"lock_appointment":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"mark_no_show":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "my_pending_invites":
 { Args: Record<PropertyKey, never>; Returns: {
               "created_at": string,"id": string,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"salon_name": string
@@ -438,6 +572,31 @@ isOneToOne: false
 "my_professional_id":
 { Args: { "p_salon_id": string }; Returns: string
                            },
+"reschedule_appointment":
+{ Args: { "p_appointment_id": string,"p_professional_id": string,"p_starts_local": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "save_professional":
 { Args: { "p_active"?: boolean,"p_color": string,"p_commission_percent": number,"p_id"?: string,"p_name": string,"p_salon_id": string }; Returns: {
               "active": boolean,
@@ -457,6 +616,9 @@ isOneToOne: false
       } },
 "search_normalize":
 { Args: { "p_text": string }; Returns: string
+                           },
+"services_totals":
+{ Args: { "p_salon_id": string,"p_service_ids": (string)[] }; Returns: Record<string, unknown>
                            },
 "set_professional_schedule":
 { Args: { "p_professional_id": string,"p_slots": Json }; Returns: {
@@ -479,7 +641,57 @@ isOneToOne: false
                            },
 "slugify":
 { Args: { "p_text": string }; Returns: string
-                           }
+                           },
+"start_appointment":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"transition_appointment":
+{ Args: { "p_appointment_id": string,"p_data"?: Json,"p_event": string,"p_from": (string)[],"p_reception_only": boolean,"p_to": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } }
           }
           Enums: {
             "salon_role": "admin"|"reception"|"professional"
