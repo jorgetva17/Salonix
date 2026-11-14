@@ -111,6 +111,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"services": {
+                  Row: {
+                    "active": boolean,"created_at": string,"duration_minutes": number,"id": string,"name": string,"price_cents": number,"salon_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"duration_minutes": number,"id"?: string,"name": string,"price_cents": number,"salon_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"name"?: string,"price_cents"?: number,"salon_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "services_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {

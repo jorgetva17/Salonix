@@ -4,19 +4,27 @@ import { getNavItems } from "@/lib/navigation";
 const hrefs = (role: Parameters<typeof getNavItems>[0]) => getNavItems(role).map((i) => i.href);
 
 describe("getNavItems", () => {
-  it("admin vê os 7 itens", () => {
+  it("admin vê todos os itens", () => {
     expect(hrefs("admin")).toEqual([
       "/painel",
       "/agenda",
       "/caixa",
+      "/clientes",
       "/estoque",
       "/financeiro",
+      "/servicos",
+      "/profissionais",
       "/equipe",
       "/configuracoes",
     ]);
   });
   it("recepção não vê equipe, financeiro nem configurações", () => {
-    expect(hrefs("reception")).toEqual(["/painel", "/agenda", "/caixa", "/estoque"]);
+    expect(hrefs("reception")).toEqual(["/painel", "/agenda", "/caixa", "/clientes", "/estoque"]);
+  });
+  it("profissional vê clientes, mas não serviços nem profissionais", () => {
+    expect(hrefs("professional")).toContain("/clientes");
+    expect(hrefs("professional")).not.toContain("/servicos");
+    expect(hrefs("professional")).not.toContain("/profissionais");
   });
   it("profissional vê 'Meus ganhos' e não vê caixa", () => {
     const items = getNavItems("professional");

@@ -1,10 +1,13 @@
 import {
   CalendarDays,
+  Contact,
   Wallet,
   LayoutDashboard,
   Package,
+  Scissors,
   Settings,
   TrendingUp,
+  UserCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -25,8 +28,11 @@ const ITEMS: NavItem[] = [
   { href: "/painel", label: "Painel", icon: LayoutDashboard, roles: ALL, primary: true },
   { href: "/agenda", label: "Agenda", icon: CalendarDays, roles: ALL, primary: true },
   { href: "/caixa", label: "Caixa", icon: Wallet, roles: ["admin", "reception"], primary: true },
+  { href: "/clientes", label: "Clientes", icon: Contact, roles: ALL, primary: false },
   { href: "/estoque", label: "Estoque", icon: Package, roles: ALL, primary: false },
   { href: "/financeiro", label: "Financeiro", icon: TrendingUp, roles: ["admin", "professional"], primary: true },
+  { href: "/servicos", label: "Serviços", icon: Scissors, roles: ["admin"], primary: false },
+  { href: "/profissionais", label: "Profissionais", icon: UserCog, roles: ["admin"], primary: false },
   { href: "/equipe", label: "Equipe", icon: Users, roles: ["admin"], primary: false },
   { href: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"], primary: false },
 ];
