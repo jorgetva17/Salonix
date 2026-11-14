@@ -89,14 +89,14 @@ isOneToOne: false
                   ]
                 },"appointments": {
                   Row: {
-                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
+                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"refunded_at": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id": string,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id": string,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
                   }
                   Update: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -113,6 +113,26 @@ isOneToOne: false
       referencedColumns: ["id","salon_id"]
     },{
       foreignKeyName: "appointments_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"cash_sessions": {
+                  Row: {
+                    "closed_at": string | null,"closed_by": string | null,"counted": Json | null,"created_at": string,"difference_cents": number | null,"expected": Json | null,"id": string,"opened_at": string,"opened_by": string | null,"opening_cents": number,"salon_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "closed_at"?: string | null,"closed_by"?: string | null,"counted"?: Json | null,"created_at"?: string,"difference_cents"?: number | null,"expected"?: Json | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"opening_cents": number,"salon_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "closed_at"?: string | null,"closed_by"?: string | null,"counted"?: Json | null,"created_at"?: string,"difference_cents"?: number | null,"expected"?: Json | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"opening_cents"?: number,"salon_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cash_sessions_salon_id_fkey"
       columns: ["salon_id"]
 isOneToOne: false
       referencedRelation: "salons"
@@ -149,6 +169,50 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "services"
       referencedColumns: ["id","salon_id"]
+    }
+                  ]
+                },"commissions": {
+                  Row: {
+                    "amount_cents": number,"appointment_id": string,"appointment_item_id": string,"base_cents": number,"created_at": string,"id": string,"paid_at": string | null,"percent": number,"professional_id": string,"reference_month": string,"reverses_id": string | null,"salon_id": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"appointment_id": string,"appointment_item_id": string,"base_cents": number,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"percent": number,"professional_id": string,"reference_month": string,"reverses_id"?: string | null,"salon_id": string,"status": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"appointment_id"?: string,"appointment_item_id"?: string,"base_cents"?: number,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"percent"?: number,"professional_id"?: string,"reference_month"?: string,"reverses_id"?: string | null,"salon_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "commissions_appointment_id_salon_id_fkey"
+      columns: ["appointment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "commissions_appointment_item_id_fkey"
+      columns: ["appointment_item_id"]
+isOneToOne: false
+      referencedRelation: "appointment_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "commissions_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "commissions_reverses_id_salon_id_fkey"
+      columns: ["reverses_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "commissions"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "commissions_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
     }
                   ]
                 },"customers": {
@@ -351,6 +415,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"transactions": {
+                  Row: {
+                    "amount_cents": number,"appointment_id": string | null,"cash_session_id": string | null,"category": string,"created_at": string,"created_by": string | null,"description": string | null,"due_date": string | null,"id": string,"method": string | null,"paid_at": string | null,"reverses_id": string | null,"salon_id": string,"status": string,"type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"appointment_id"?: string | null,"cash_session_id"?: string | null,"category": string,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"due_date"?: string | null,"id"?: string,"method"?: string | null,"paid_at"?: string | null,"reverses_id"?: string | null,"salon_id": string,"status": string,"type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"appointment_id"?: string | null,"cash_session_id"?: string | null,"category"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"due_date"?: string | null,"id"?: string,"method"?: string | null,"paid_at"?: string | null,"reverses_id"?: string | null,"salon_id"?: string,"status"?: string,"type"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "transactions_appointment_id_salon_id_fkey"
+      columns: ["appointment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "transactions_cash_session_id_salon_id_fkey"
+      columns: ["cash_session_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "cash_sessions"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "transactions_reverses_id_salon_id_fkey"
+      columns: ["reverses_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "transactions"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "transactions_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -389,6 +491,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -420,6 +523,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -448,6 +552,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -473,6 +578,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -540,6 +646,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -577,6 +684,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -602,6 +710,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -635,6 +744,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -705,6 +815,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
@@ -730,6 +841,7 @@ isOneToOne: false
 "kind": string,
 "notes": string | null,
 "professional_id": string | null,
+"refunded_at": string | null,
 "salon_id": string,
 "starts_at": string | null,
 "status": string,
