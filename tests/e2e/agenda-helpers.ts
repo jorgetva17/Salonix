@@ -37,12 +37,13 @@ export async function setupSalonWithAgenda(page: Page, label: string) {
   await expect(page.getByText("Jornada salva")).toBeVisible();
 }
 
-export async function bookTomorrow(page: Page, customer: string, time: string) {
+export async function bookTomorrow(page: Page, customer: string, time: string, phone = "") {
   await page.goto(`/agenda?data=${dayInSaoPaulo(1)}`);
   await page.getByRole("button", { name: "Agendar" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Cliente", { exact: true }).fill(customer);
   await dialog.getByRole("button", { name: `Cadastrar “${customer}”` }).click();
+  if (phone) await dialog.getByLabel("WhatsApp do novo cliente (opcional)").fill(phone);
   await dialog.getByRole("button", { name: "Cadastrar cliente" }).click();
   await expect(dialog.getByRole("button", { name: "Trocar cliente" })).toBeVisible();
   await dialog.getByRole("checkbox", { name: /Corte/ }).check();

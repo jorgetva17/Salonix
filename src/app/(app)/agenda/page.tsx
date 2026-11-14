@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { DayGrid, WeekList, type AgendaAppointment, type AgendaColumn } from "./agenda-client";
+import { AppointmentSheetProvider } from "./appointment-sheet";
 import { ACTIVE_STATUSES } from "./data";
 import { NewAppointmentButton } from "./new-appointment";
 
@@ -29,10 +30,10 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const canManage = membership.role === "admin" || membership.role === "reception";
 
   const supabase = await createServerClient();
+  const { data: myProfessionalId } = await supabase.rpc("my_professional_id", { p_salon_id: salon.id });
   let professionalsQuery = supabase.from("professionals").select("id, name, color").eq("salon_id", salon.id).eq("active", true).order("name");
   if (!canManage) {
-    const { data: mine } = await supabase.rpc("my_professional_id", { p_salon_id: salon.id });
-    professionalsQuery = professionalsQuery.eq("id", mine ?? "00000000-0000-0000-0000-000000000000");
+    professionalsQuery = professionalsQuery.eq("id", myProfessionalId ?? "00000000-0000-0000-0000-000000000000");
   }
   const { data: professionals, error } = await professionalsQuery;
   if (error) throw error;
@@ -183,7 +184,15 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      {body}
+      <AppointmentSheetProvider
+        salonName={salon.name}
+        timeZone={tz}
+        canManage={canManage}
+        myProfessionalId={myProfessionalId ?? null}
+        professionals={professionals}
+      >
+        {body}
+      </AppointmentSheetProvider>
     </div>
   );
 }

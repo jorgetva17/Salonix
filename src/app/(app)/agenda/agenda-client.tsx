@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { minutesToTime } from "@/lib/agenda/time";
 import { APPOINTMENT_STATUS_LABELS } from "@/lib/agenda/status";
+import { useOpenAppointment } from "./appointment-sheet";
 
 export type AgendaAppointment = {
   id: string;
@@ -34,19 +35,18 @@ function AppointmentBlock({
   appointment,
   color,
   top,
-  onSelect,
 }: {
   appointment: AgendaAppointment;
   color: string;
   top: number;
-  onSelect?: (a: AgendaAppointment) => void;
 }) {
+  const onSelect = useOpenAppointment();
   const height = Math.max((appointment.end - appointment.start) * PX_PER_MINUTE, 28);
   return (
     <button
       type="button"
       data-testid="agenda-appointment"
-      onClick={() => onSelect?.(appointment)}
+      onClick={() => onSelect(appointment)}
       className="absolute inset-x-1 overflow-hidden rounded-md px-2 py-1 text-left text-xs text-white outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       style={{ top, height, backgroundColor: color, opacity: appointment.status === "awaiting_payment" || appointment.status === "paid" ? 0.7 : 1 }}
     >
@@ -65,12 +65,10 @@ export function DayGrid({
   columns,
   range,
   selectedId,
-  onSelect,
 }: {
   columns: AgendaColumn[];
   range: { start: number; end: number };
   selectedId: string;
-  onSelect?: (a: AgendaAppointment) => void;
 }) {
   const [mobileId, setMobileId] = useState(selectedId);
   const height = (range.end - range.start) * PX_PER_MINUTE;
@@ -139,7 +137,7 @@ export function DayGrid({
                 </div>
               ))}
               {c.appointments.map((a) => (
-                <AppointmentBlock key={a.id} appointment={a} color={c.color} top={y(a.start)} onSelect={onSelect} />
+                <AppointmentBlock key={a.id} appointment={a} color={c.color} top={y(a.start)} />
               ))}
             </div>
           </section>
@@ -152,12 +150,11 @@ export function DayGrid({
 export function WeekList({
   days,
   color,
-  onSelect,
 }: {
   days: { date: string; label: string; appointments: AgendaAppointment[] }[];
   color: string;
-  onSelect?: (a: AgendaAppointment) => void;
 }) {
+  const onSelect = useOpenAppointment();
   return (
     <ol className="flex flex-col gap-4">
       {days.map((d) => (
@@ -172,7 +169,7 @@ export function WeekList({
                   <button
                     type="button"
                     data-testid="agenda-appointment"
-                    onClick={() => onSelect?.(a)}
+                    onClick={() => onSelect(a)}
                     className="flex min-h-11 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left hover:bg-muted"
                   >
                     <span className="h-8 w-1 rounded-full" style={{ backgroundColor: color }} aria-hidden />
