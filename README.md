@@ -78,6 +78,13 @@ Rode `npm run db:reset` antes do E2E para recarregar os usuários de demonstraç
   agendamentos do mesmo profissional nunca se sobrepõem: uma trava no próprio banco recusa o
   segundo, mesmo com duas recepções clicando ao mesmo tempo.
 - Agenda e fila se atualizam sozinhas via Supabase Realtime.
+- Caixa: uma sessão aberta por salão (trava no banco). Receber um atendimento é uma única
+  função do banco que grava os pagamentos no caixa aberto, as comissões de cada serviço e o
+  status "pago" — tudo junto ou nada. Pix nasce pendente e a comissão fica bloqueada até
+  alguém confirmar o Pix; no fechamento, o Pix pendente aparece fora do total conferido.
+- Atendimento pago não é editado: o admin estorna, o que gera lançamentos inversos (saída no
+  caixa aberto, comissão estornada ou abatida no mês seguinte se já tinha sido paga).
+- Desconto é repartido entre os serviços em centavos inteiros, sem sobra nem falta de 1 centavo.
 - Logos são convertidas para PNG no servidor e gravadas no bucket `salon-logos`
   apenas pelo servidor; o bucket é público só para leitura.
 
