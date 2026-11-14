@@ -73,6 +73,11 @@ Rode `npm run db:reset` antes do E2E para recarregar os usuários de demonstraç
   para registro de outro salão (ex.: comissão de um serviço de outro salão).
 - Percentuais de comissão ficam em `commission_rates`, legível só pelo admin e pelo próprio
   profissional; a recepção não vê comissões nem pela API.
+- Atendimentos (`appointments`) só mudam por funções do banco (agendar, reagendar, cancelar,
+  chamar da fila, iniciar, concluir), que conferem perfil e status e gravam o histórico. Dois
+  agendamentos do mesmo profissional nunca se sobrepõem: uma trava no próprio banco recusa o
+  segundo, mesmo com duas recepções clicando ao mesmo tempo.
+- Agenda e fila se atualizam sozinhas via Supabase Realtime.
 - Logos são convertidas para PNG no servidor e gravadas no bucket `salon-logos`
   apenas pelo servidor; o bucket é público só para leitura.
 

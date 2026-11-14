@@ -38,3 +38,22 @@ test.describe("cadastros de demonstração do seed", () => {
     await expect(page.getByTestId("customer-row").filter({ hasText: "Carlos Cliente" })).toBeVisible();
   });
 });
+
+/** Próxima terça estritamente depois de hoje, em São Paulo (mesma regra do seed). */
+function nextTuesday(): string {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const d = new Date(`${today}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + (((2 - d.getUTCDay() + 7) % 7) || 7));
+  return d.toISOString().slice(0, 10);
+}
+
+test.describe("agenda de demonstração do seed", () => {
+  test("recepção vê o agendamento e a fila de demonstração", async ({ page }) => {
+    await signIn(page, "recepcao@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto(`/agenda?data=${nextTuesday()}`);
+    await expect(page.getByTestId("agenda-appointment").filter({ hasText: "Carlos Cliente" })).toContainText("10:00");
+    await page.goto("/agenda/fila");
+    await expect(page.getByTestId("queue-item").filter({ hasText: "Bruna Souza" })).toBeVisible();
+  });
+});
