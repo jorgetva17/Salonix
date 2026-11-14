@@ -23,7 +23,103 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "commission_rates": {
+            "appointment_events": {
+                  Row: {
+                    "actor": string | null,"appointment_id": string,"created_at": string,"data": NonNullable<Json>,"event": string,"id": string,"salon_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor"?: string | null,"appointment_id": string,"created_at"?: string,"data"?: NonNullable<Json>,"event": string,"id"?: string,"salon_id": string
+                  }
+                  Update: {
+                    "actor"?: string | null,"appointment_id"?: string,"created_at"?: string,"data"?: NonNullable<Json>,"event"?: string,"id"?: string,"salon_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "appointment_events_appointment_id_salon_id_fkey"
+      columns: ["appointment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointment_events_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"appointment_items": {
+                  Row: {
+                    "appointment_id": string,"created_at": string,"duration_minutes": number,"id": string,"item_type": string,"professional_id": string | null,"quantity": number,"salon_id": string,"service_id": string,"unit_price_cents": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "appointment_id": string,"created_at"?: string,"duration_minutes": number,"id"?: string,"item_type": string,"professional_id"?: string | null,"quantity"?: number,"salon_id": string,"service_id": string,"unit_price_cents": number
+                  }
+                  Update: {
+                    "appointment_id"?: string,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"item_type"?: string,"professional_id"?: string | null,"quantity"?: number,"salon_id"?: string,"service_id"?: string,"unit_price_cents"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "appointment_items_appointment_id_salon_id_fkey"
+      columns: ["appointment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointment_items_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointment_items_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "appointment_items_service_id_salon_id_fkey"
+      columns: ["service_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id","salon_id"]
+    }
+                  ]
+                },"appointments": {
+                  Row: {
+                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id": string,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "appointments_customer_id_salon_id_fkey"
+      columns: ["customer_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointments_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointments_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"commission_rates": {
                   Row: {
                     "created_at": string,"id": string,"percent": number,"professional_id": string,"salon_id": string,"service_id": string | null,"updated_at": string
                   }
@@ -277,6 +373,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"can_see_appointment":
+{ Args: { "p_kind": string,"p_professional_id": string,"p_salon_id": string,"p_status": string }; Returns: boolean
+                           },
 "commission_percent_for":
 { Args: { "p_professional_id": string,"p_service_id": string }; Returns: number
                            },
@@ -335,6 +434,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "created_at": string,"id": string,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"salon_name": string
             }[]
+                           },
+"my_professional_id":
+{ Args: { "p_salon_id": string }; Returns: string
                            },
 "save_professional":
 { Args: { "p_active"?: boolean,"p_color": string,"p_commission_percent": number,"p_id"?: string,"p_name": string,"p_salon_id": string }; Returns: {
