@@ -48,6 +48,30 @@ test("convite para quem já tem conta aparece ao entrar", async ({ page, browser
   await expect(page.getByText("Paulo Profissional", { exact: true })).toBeVisible();
 });
 
+test("convidado novo que recusa o convite precisa criar senha antes de seguir", async ({ page, browser }) => {
+  await signUpSalon(page, { email: uniqueEmail("dono4"), salonName: "Salão Recusado" });
+  const guest = uniqueEmail("recusa");
+  await invite(page, guest, "Profissional");
+  await expect(page.getByRole("status")).toContainText(`Convite enviado para ${guest}`);
+
+  const guestPage = await (await browser.newContext()).newPage();
+  await guestPage.goto(await latestEmailLink(guest));
+  await expect(guestPage).toHaveURL(/\/convite\/aceitar$/);
+  await guestPage.getByRole("button", { name: "Recusar" }).click();
+  await expect(guestPage.getByText("Nenhum convite pendente")).toBeVisible();
+
+  await guestPage.goto("/onboarding");
+  await expect(guestPage).toHaveURL(/\/definir-senha$/);
+  await guestPage.getByLabel("Seu nome").fill("Duda");
+  await guestPage.getByLabel("Crie uma senha").fill("senhadaduda1");
+  await guestPage.getByRole("button", { name: "Salvar e continuar" }).click();
+  await expect(guestPage).toHaveURL(/\/onboarding$/);
+
+  await guestPage.context().clearCookies();
+  await signIn(guestPage, guest, "senhadaduda1");
+  await expect(guestPage).toHaveURL(/\/onboarding$/);
+});
+
 test("recepção não acessa a tela de equipe", async ({ page, browser }) => {
   await signUpSalon(page, { email: uniqueEmail("dono3"), salonName: "Salão Restrito" });
   const rec = uniqueEmail("rec");

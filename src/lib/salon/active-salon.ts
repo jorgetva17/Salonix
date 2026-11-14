@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { needsPasswordSetup } from "@/lib/invites";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import { ACTIVE_SALON_COOKIE, pickActiveMembership, type Membership, type SalonRole } from "./membership";
@@ -51,6 +52,7 @@ export const getActiveMembership = cache(
 export async function requireRole(roles?: SalonRole[]) {
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
+  if (needsPasswordSetup(user)) redirect("/definir-senha");
   const active = await getActiveMembership();
   if (!active) redirect("/onboarding");
   if (roles && !roles.includes(active.membership.role)) redirect("/painel");

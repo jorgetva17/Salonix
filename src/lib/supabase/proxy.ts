@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/cadastro",
   "/recuperar-senha",
   "/redefinir-senha",
+  "/definir-senha",
   "/convite/aceitar",
   "/auth/callback",
 ];

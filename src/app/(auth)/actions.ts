@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import type { FormState } from "@/lib/action-result";
 import { authErrorMessage, safeNextPath } from "@/lib/auth-helpers";
+import { acceptWithPasswordSchema } from "@/lib/validation/team";
 import { createServerClient } from "@/lib/supabase/server";
 import {
   createSalonSchema,
@@ -95,6 +96,22 @@ export async function updatePassword(_prev: FormState, formData: FormData): Prom
   const supabase = await createServerClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { ok: false, error: authErrorMessage(error.code) };
+
+  redirect("/painel");
+}
+
+/** Convidado que chegou pelo e-mail e ainda não tem senha (ex.: recusou o convite). */
+export async function setInitialPassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const parsed = acceptWithPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return invalid(firstErrors(parsed));
+
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+    data: { full_name: parsed.data.fullName, password_set: true },
+  });
+  if (error) return { ok: false, error: authErrorMessage(error.code) };
+  await supabase.from("profiles").update({ full_name: parsed.data.fullName }).eq("id", data.user.id);
 
   redirect("/painel");
 }
