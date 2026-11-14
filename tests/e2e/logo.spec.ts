@@ -19,6 +19,15 @@ test("admin envia logo do salão e ela aparece no menu; arquivo inválido é rec
   await dark.getByRole("button", { name: "Enviar logo" }).click();
   await expect(dark.getByRole("alert")).toHaveText("Formato inválido. Envie PNG, JPG ou SVG.");
 
+  // Foto de celular comum (3 MB): mensagem clara, não tela de erro genérica.
+  await dark.getByLabel("Arquivo").setInputFiles({
+    name: "foto.png",
+    mimeType: "image/png",
+    buffer: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(3 * 1024 * 1024)]),
+  });
+  await dark.getByRole("button", { name: "Enviar logo" }).click();
+  await expect(dark.getByRole("alert")).toHaveText("A imagem deve ter no máximo 2 MB.");
+
   await dark.getByLabel("Arquivo").setInputFiles("public/icons/icon-192.png");
   await dark.getByRole("button", { name: "Enviar logo" }).click();
   await expect(dark.getByRole("status")).toHaveText("Logo atualizada.");

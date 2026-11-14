@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Upload de logo (até 2 MB) + overhead do multipart.
-    serverActions: { bodySizeLimit: "3mb" },
+    // Folga acima do limite de 2 MB da logo, para que arquivos maiores cheguem
+    // ao validador e recebam a mensagem certa em vez de um erro genérico.
+    serverActions: { bodySizeLimit: "10mb" },
   },
   turbopack: {
     rules: {

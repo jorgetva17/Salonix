@@ -1,11 +1,12 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- prévia da logo enviada (inclusive SVG) sempre via <img> */
-import { useActionState, useTransition } from "react";
+import { useActionState, useState, useTransition, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { MAX_LOGO_BYTES } from "@/lib/validation/logo";
 import { removeSalonLogo, uploadSalonLogo } from "./logo-actions";
 
 type Props = {
@@ -19,10 +20,22 @@ type Props = {
 export function LogoUploader({ variant, title, hint, src, custom }: Props) {
   const [state, action, pending] = useActionState(uploadSalonLogo, null);
   const [removing, startRemove] = useTransition();
+  const [clientError, setClientError] = useState<string | null>(null);
   const inputId = `logo-${variant}`;
 
+  // Arquivos grandes nem chegam a ser enviados (o servidor também valida).
+  const checkSize = (e: FormEvent<HTMLFormElement>) => {
+    const file = new FormData(e.currentTarget).get("file");
+    if (file instanceof File && file.size > MAX_LOGO_BYTES) {
+      e.preventDefault();
+      setClientError("A imagem deve ter no máximo 2 MB.");
+    } else {
+      setClientError(null);
+    }
+  };
+
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <form action={action} onSubmit={checkSize} className="flex flex-col gap-3">
       <input type="hidden" name="variant" value={variant} />
       <div>
         <h3 className="font-semibold">{title}</h3>
@@ -47,7 +60,11 @@ export function LogoUploader({ variant, title, hint, src, custom }: Props) {
         required
         className="text-sm file:mr-3 file:h-11 file:rounded-lg file:border-0 file:bg-secondary file:px-4 file:font-medium file:text-secondary-foreground"
       />
-      {state && (
+      {clientError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {clientError}
+        </p>
+      ) : state && (
         <p role={state.ok ? "status" : "alert"} className={cn("text-sm", !state.ok && "text-destructive")}>
           {state.ok ? ("message" in state ? state.message : "") : state.error}
         </p>
