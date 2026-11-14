@@ -234,7 +234,7 @@ select is((select count(*)::int from public.commissions where professional_id = 
 select is((select array_agg(distinct status) from public.commissions where appointment_id = (select v from ids where k='a7')), array['blocked'],
   'comissão bloqueada não é paga');
 select results_eq(
-  $$select amount_cents, method, status, cash_session_id from public.transactions where category = 'comissao'$$,
+  format($$select amount_cents, method, status, cash_session_id from public.transactions where category = 'comissao' and salon_id = %L$$, (select v from ids where k='salon_a')),
   format($$values (3550, 'cash'::text, 'paid'::text, %L::uuid)$$, (select v from ids where k='cs')),
   'despesa de comissão no caixa aberto');
 select t.login((select v from ids where k='ana'));
