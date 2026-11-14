@@ -55,6 +55,26 @@ isOneToOne: false
       referencedColumns: ["id","salon_id"]
     }
                   ]
+                },"customers": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"name_search": string | null,"notes": string | null,"phone": string | null,"salon_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"name_search"?: never,"notes"?: string | null,"phone"?: string | null,"salon_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"name_search"?: never,"notes"?: string | null,"phone"?: string | null,"salon_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "customers_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"feature_flags": {
                   Row: {
                     "card_reconciliation": boolean,"pix_webhook": boolean,"salon_id": string,"updated_at": string
@@ -333,6 +353,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"search_normalize":
+{ Args: { "p_text": string }; Returns: string
+                           },
 "set_professional_schedule":
 { Args: { "p_professional_id": string,"p_slots": Json }; Returns: {
               "created_at": string,
