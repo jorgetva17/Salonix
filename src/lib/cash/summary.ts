@@ -5,13 +5,16 @@ export type CashTx = {
   method: PaymentMethod | null;
   status: "pending" | "paid" | "reversed";
   amountCents: number;
+  /** Quando o dinheiro entrou/saiu; nulo = nunca recebido (ex.: Pix pendente). */
+  paidAt?: string | null;
 };
 
 const zero = (): Record<PaymentMethod, number> => ({ cash: 0, debit: 0, credit: 0, pix: 0 });
 
 /**
- * Esperado no caixa por forma: entradas pagas − saídas pagas, com a abertura no
- * dinheiro. O Pix pendente fica à parte, fora do total conferido (mesma regra do
+ * Esperado no caixa por forma: entradas recebidas − saídas pagas, com a abertura no
+ * dinheiro. Entrada estornada depois de recebida continua contando (o dinheiro
+ * entrou; a saída do estorno é que o tira). O Pix pendente fica à parte, fora do total conferido (mesma regra do
  * `cash_session_expected` no banco, que é o que vale no fechamento).
  */
 export function cashSummary(
@@ -23,7 +26,8 @@ export function cashSummary(
   let pixPendingCents = 0;
   for (const tx of txs) {
     if (!tx.method) continue;
-    if (tx.status === "paid") expected[tx.method] += tx.type === "income" ? tx.amountCents : -tx.amountCents;
+    const received = tx.status === "paid" || (tx.type === "income" && tx.status === "reversed" && Boolean(tx.paidAt));
+    if (received) expected[tx.method] += tx.type === "income" ? tx.amountCents : -tx.amountCents;
     else if (tx.status === "pending" && tx.method === "pix" && tx.type === "income") pixPendingCents += tx.amountCents;
   }
   const totalExpectedCents = PAYMENT_METHODS.reduce((sum, m) => sum + expected[m], 0);

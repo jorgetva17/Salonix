@@ -66,6 +66,17 @@ export async function receivePayment(_prev: FormState, formData: FormData): Prom
   return { ok: true, message: `Recebido ${formatBRL(data.total_cents - data.discount_cents)}.` };
 }
 
+export async function refundAppointment(id: string, reason: string): Promise<ActionResult> {
+  await requireRole(["admin"]);
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: "Atendimento inválido." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("refund_appointment", { p_appointment_id: id, p_reason: reason.trim().slice(0, 200) });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível estornar.") };
+  revalidatePath("/caixa");
+  revalidatePath("/agenda");
+  return { ok: true };
+}
+
 export async function confirmPix(transactionId: string): Promise<ActionResult> {
   await requireRole(["admin", "reception"]);
   if (!z.uuid().safeParse(transactionId).success) return { ok: false, error: "Pix inválido." };

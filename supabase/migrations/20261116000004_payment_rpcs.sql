@@ -179,6 +179,61 @@ begin
 end;
 $$;
 
+-- Estorno (só admin): nada é apagado. Entradas recebidas viram reversed com uma
+-- saída igual no caixa aberto; Pix nunca recebido só vira reversed; comissão ainda
+-- não paga vira reversed; comissão já paga ganha um abatimento negativo no mês atual.
+create or replace function public.refund_appointment(p_appointment_id uuid, p_reason text)
+returns public.appointments
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_appt public.appointments := public.lock_appointment(p_appointment_id);
+  v_session uuid;
+begin
+  if public.has_salon_role(v_appt.salon_id, '{admin}') is not true then
+    raise exception 'Sem permissão.';
+  end if;
+  if v_appt.refunded_at is not null then
+    raise exception 'Atendimento já estornado.';
+  end if;
+  if v_appt.status <> 'paid' then
+    raise exception 'Atendimento não pode mudar deste status.';
+  end if;
+  if nullif(trim(p_reason), '') is null then
+    raise exception 'Informe o motivo do estorno.';
+  end if;
+  v_session := public.open_cash_session_id(v_appt.salon_id);
+  if v_session is null then
+    raise exception 'Abra o caixa antes de estornar.';
+  end if;
+
+  insert into public.transactions (salon_id, type, category, amount_cents, method, status, paid_at, appointment_id, cash_session_id, reverses_id, description)
+  select salon_id, 'expense', 'estorno', amount_cents, method, 'paid', now(), appointment_id, v_session, id, left(trim(p_reason), 200)
+  from public.transactions
+  where appointment_id = v_appt.id and type = 'income' and status = 'paid';
+  update public.transactions set status = 'reversed'
+  where appointment_id = v_appt.id and type = 'income' and status in ('paid', 'pending');
+
+  insert into public.commissions (salon_id, appointment_id, appointment_item_id, professional_id, base_cents, percent, amount_cents, reference_month, status, reverses_id)
+  select salon_id, appointment_id, appointment_item_id, professional_id, -base_cents, percent, -amount_cents,
+         public.salon_month(v_appt.salon_id), 'available', id
+  from public.commissions
+  where appointment_id = v_appt.id and status = 'paid' and reverses_id is null and amount_cents > 0;
+  update public.commissions set status = 'reversed'
+  where appointment_id = v_appt.id and status in ('blocked', 'available') and reverses_id is null;
+
+  update public.appointments set refunded_at = now() where id = v_appt.id returning * into v_appt;
+  insert into public.appointment_events (salon_id, appointment_id, event, data)
+  values (v_appt.salon_id, v_appt.id, 'refunded', jsonb_build_object('reason', trim(p_reason)));
+  return v_appt;
+end;
+$$;
+
+revoke execute on function public.refund_appointment(uuid, text) from public, anon;
+grant execute on function public.refund_appointment(uuid, text) to authenticated;
+
 revoke execute on function public.receive_payment(uuid, jsonb, integer) from public, anon;
 revoke execute on function public.confirm_pix(uuid) from public, anon;
 grant execute on function public.receive_payment(uuid, jsonb, integer) to authenticated;

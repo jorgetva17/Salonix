@@ -18,6 +18,19 @@ describe("cashSummary", () => {
     });
   });
 
+  it("estorno de entrada recebida: a entrada conta, a saída desconta", () => {
+    const refunded: CashTx[] = [
+      { type: "income", method: "cash", status: "reversed", amountCents: 4000, paidAt: "2026-11-20T13:00:00Z" },
+      { type: "expense", method: "cash", status: "paid", amountCents: 4000, paidAt: "2026-11-20T14:00:00Z" },
+      { type: "income", method: "pix", status: "reversed", amountCents: 3000, paidAt: null },
+    ];
+    expect(cashSummary(10000, refunded)).toEqual({
+      expected: { cash: 10000, debit: 0, credit: 0, pix: 0 },
+      pixPendingCents: 0,
+      totalExpectedCents: 10000,
+    });
+  });
+
   it("caixa sem movimento espera só a abertura em dinheiro", () => {
     expect(cashSummary(5000, []).expected).toEqual({ cash: 5000, debit: 0, credit: 0, pix: 0 });
   });

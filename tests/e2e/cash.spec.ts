@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { setupSalonWithAgenda } from "./agenda-helpers";
+import { dayInSaoPaulo, setupSalonWithAgenda } from "./agenda-helpers";
 import { bookAndFinish, closeCash, openCash, startReceiving } from "./cash-helpers";
 import { signIn } from "./helpers";
 
@@ -52,4 +52,31 @@ test("receber em dinheiro com 2 toques e dividido com Pix a confirmar", async ({
   await page.getByTestId("pix-to-confirm").getByRole("button", { name: "Confirmar Pix" }).click();
   await expect(page.getByTestId("expected-pix")).toHaveText("R$ 20,00");
   await expect(page.getByTestId("pix-pending")).toHaveText("R$ 0,00");
+});
+
+test("admin estorna atendimento pago e o dinheiro sai do caixa", async ({ page }) => {
+  await setupSalonWithAgenda(page, "estorno");
+  await openCash(page, "100,00");
+  await bookAndFinish(page, "Gil Teste", "10:00");
+  const dialog = await startReceiving(page, "Gil Teste");
+  await dialog.getByRole("button", { name: "Receber R$ 40,00" }).click();
+  await expect(page.getByTestId("expected-cash")).toHaveText("R$ 140,00");
+
+  await page.goto(`/agenda?data=${dayInSaoPaulo(1)}`);
+  const gil = page.getByTestId("agenda-appointment").filter({ hasText: "Gil Teste" });
+  await gil.click();
+  let sheet = page.getByRole("dialog");
+  await expect(sheet.getByTestId("appointment-payments")).toHaveText("Dinheiro R$ 40,00");
+  await sheet.getByRole("button", { name: "Estornar" }).click();
+  await expect(sheet.getByRole("button", { name: "Confirmar estorno" })).toBeDisabled();
+  await sheet.getByLabel("Motivo", { exact: true }).fill("Cobrado em dobro");
+  await sheet.getByRole("button", { name: "Confirmar estorno" }).click();
+  await expect(sheet).toBeHidden();
+
+  await gil.click();
+  sheet = page.getByRole("dialog");
+  await expect(sheet.getByTestId("appointment-status")).toHaveText("Pago · Estornado");
+  await expect(sheet.getByTestId("appointment-history")).toContainText("Cobrado em dobro");
+  await page.goto("/caixa");
+  await expect(page.getByTestId("expected-cash")).toHaveText("R$ 100,00");
 });

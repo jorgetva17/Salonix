@@ -47,7 +47,7 @@ export default async function CashPage() {
   const { data: txs, error: e3 } = open
     ? await supabase
         .from("transactions")
-        .select("id, type, category, method, status, amount_cents, created_at, appointments(customers(name))")
+        .select("id, type, category, method, status, amount_cents, paid_at, created_at, appointments(customers(name))")
         .eq("cash_session_id", open.id)
         .order("created_at", { ascending: false })
     : { data: [], error: null };
@@ -55,7 +55,7 @@ export default async function CashPage() {
   const summary = open
     ? cashSummary(
         open.opening_cents,
-        txs.map((t) => ({ type: t.type, method: t.method, status: t.status, amountCents: t.amount_cents }) as CashTx),
+        txs.map((t) => ({ type: t.type, method: t.method, status: t.status, amountCents: t.amount_cents, paidAt: t.paid_at }) as CashTx),
       )
     : null;
 

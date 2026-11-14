@@ -25,6 +25,7 @@ import {
   startAppointment,
   type AppointmentDetails,
 } from "./actions";
+import { refundAppointment } from "../caixa/actions";
 import { PaymentForm } from "../caixa/payment-dialog";
 import type { AgendaAppointment } from "./agenda-client";
 import { selectClass, SlotPicker, type ProfessionalOption } from "./new-appointment";
@@ -33,6 +34,7 @@ type SheetContext = {
   salonName: string;
   timeZone: string;
   canManage: boolean;
+  isAdmin: boolean;
   myProfessionalId: string | null;
   professionals: ProfessionalOption[];
   services: { id: string; name: string; price_cents: number }[];
@@ -69,7 +71,7 @@ function AppointmentDetail({
   onClose: () => void;
 }) {
   const [details, setDetails] = useState<AppointmentDetails | null>(null);
-  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show" | "revert" | "pay">("view");
+  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show" | "revert" | "pay" | "refund">("view");
   const [pending, startTransition] = useTransition();
   const professional = ctx.professionals.find((p) => p.id === a.professionalId);
   const isOwn = ctx.myProfessionalId !== null && ctx.myProfessionalId === a.professionalId;
@@ -106,7 +108,10 @@ function AppointmentDetail({
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted-foreground">Status</dt>
-        <dd data-testid="appointment-status">{APPOINTMENT_STATUS_LABELS[status]}</dd>
+        <dd data-testid="appointment-status">
+          {APPOINTMENT_STATUS_LABELS[status]}
+          {details?.refundedAt && " · Estornado"}
+        </dd>
         {!canAdjust && (
           <>
             <dt className="text-muted-foreground">Serviços</dt>
@@ -165,6 +170,11 @@ function AppointmentDetail({
               Concluir
             </Button>
           )}
+          {status === "paid" && ctx.isAdmin && !details.refundedAt && (
+            <Button variant="ghost" className="h-11 text-destructive" onClick={() => setMode("refund")}>
+              Estornar
+            </Button>
+          )}
           {status === "awaiting_payment" && ctx.canManage && (
             <Button className="h-11" onClick={() => setMode("pay")}>
               Receber
@@ -221,6 +231,18 @@ function AppointmentDetail({
             Voltar
           </Button>
         </div>
+      )}
+
+      {mode === "refund" && (
+        <ConfirmBox
+          message={`Estornar o atendimento de ${a.customerName}? Os valores recebidos saem do caixa aberto.`}
+          withReason
+          reasonRequired
+          confirmLabel="Confirmar estorno"
+          pending={pending}
+          onBack={() => setMode("view")}
+          onConfirm={(reason) => run(() => refundAppointment(a.id, reason), "Atendimento estornado")}
+        />
       )}
 
       {mode === "revert" && (
@@ -350,6 +372,7 @@ function ItemsEditor({
 export function ConfirmBox({
   message,
   withReason,
+  reasonRequired = false,
   confirmLabel,
   pending,
   onBack,
@@ -357,6 +380,7 @@ export function ConfirmBox({
 }: {
   message: string;
   withReason: boolean;
+  reasonRequired?: boolean;
   confirmLabel: string;
   pending: boolean;
   onBack: () => void;
@@ -368,8 +392,8 @@ export function ConfirmBox({
       <p className="text-sm">{message}</p>
       {withReason && (
         <Input
-          aria-label="Motivo (opcional)"
-          placeholder="Motivo (opcional)"
+          aria-label={reasonRequired ? "Motivo" : "Motivo (opcional)"}
+          placeholder={reasonRequired ? "Motivo" : "Motivo (opcional)"}
           value={reason}
           maxLength={200}
           onChange={(e) => setReason(e.target.value)}
@@ -377,7 +401,12 @@ export function ConfirmBox({
         />
       )}
       <div className="flex gap-2">
-        <Button variant="destructive" className="h-11" disabled={pending} onClick={() => onConfirm(reason)}>
+        <Button
+          variant="destructive"
+          className="h-11"
+          disabled={pending || (reasonRequired && !reason.trim())}
+          onClick={() => onConfirm(reason)}
+        >
           {pending && <Loader2 className="animate-spin" aria-hidden />}
           {confirmLabel}
         </Button>

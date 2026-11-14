@@ -22,8 +22,10 @@ begin
 end;
 $$;
 
--- Esperado por forma: entradas pagas − saídas pagas da sessão; o dinheiro soma a
--- abertura. Pix pendente fica fora das formas, em "pix_pending" (uso interno).
+-- Esperado por forma: entradas recebidas − saídas pagas da sessão; o dinheiro soma
+-- a abertura. Entrada estornada depois de recebida (paid_at preenchido) continua
+-- contando: a saída do estorno é que tira o dinheiro. Pix pendente fica fora das
+-- formas, em "pix_pending" (uso interno).
 create or replace function public.cash_session_expected(p_session_id uuid)
 returns jsonb
 language sql
@@ -32,15 +34,16 @@ security definer
 set search_path = ''
 as $$
   select jsonb_build_object(
-    'cash', s.opening_cents + coalesce(sum(t.signed) filter (where t.method = 'cash' and t.status = 'paid'), 0),
-    'debit', coalesce(sum(t.signed) filter (where t.method = 'debit' and t.status = 'paid'), 0),
-    'credit', coalesce(sum(t.signed) filter (where t.method = 'credit' and t.status = 'paid'), 0),
-    'pix', coalesce(sum(t.signed) filter (where t.method = 'pix' and t.status = 'paid'), 0),
+    'cash', s.opening_cents + coalesce(sum(t.signed) filter (where t.method = 'cash' and t.received), 0),
+    'debit', coalesce(sum(t.signed) filter (where t.method = 'debit' and t.received), 0),
+    'credit', coalesce(sum(t.signed) filter (where t.method = 'credit' and t.received), 0),
+    'pix', coalesce(sum(t.signed) filter (where t.method = 'pix' and t.received), 0),
     'pix_pending', coalesce(sum(t.amount_cents) filter (where t.method = 'pix' and t.status = 'pending' and t.type = 'income'), 0)
   )
   from public.cash_sessions s
   left join lateral (
     select x.method, x.status, x.type, x.amount_cents,
+           x.status = 'paid' or (x.type = 'income' and x.status = 'reversed' and x.paid_at is not null) as received,
            case when x.type = 'income' then x.amount_cents else -x.amount_cents end as signed
     from public.transactions x
     where x.cash_session_id = s.id

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(41);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -143,6 +143,69 @@ select is((select sum(amount_cents)::int from public.commissions where appointme
 -- Repartição do desconto (interno) ---------------------------------------------
 select is(public.allocate_discount('{4500,3500}', 1000), '{563,437}'::int[], 'resto vai para o primeiro empatado');
 select is(public.allocate_discount('{1,1,1}', 2), '{1,1,0}'::int[], 'centavos inteiros sem sobra');
+
+-- Estorno ------------------------------------------------------------------------
+create function t.refund(p_key text, p_reason text default 'Cobrado em dobro') returns text language sql as $$
+  select status from public.refund_appointment((select v from ids where k=p_key), p_reason);
+$$;
+grant execute on function t.refund(text, text) to authenticated;
+
+select t.login((select v from ids where k='rec'));
+select throws_ok($$select t.refund('a1')$$, 'Sem permissão.', 'recepção não estorna');
+select t.login((select v from ids where k='bia'));
+select throws_ok($$select t.refund('a1')$$, 'Sem permissão.', 'outro salão não estorna');
+
+select t.login((select v from ids where k='ana'));
+select is(t.refund('a1'), 'paid', 'estornado continua pago');
+select t.logout();
+insert into ids select 'in_a1', id from public.transactions where appointment_id = (select v from ids where k='a1') and type = 'income';
+select is((select status from public.transactions where id = (select v from ids where k='in_a1')), 'reversed', 'entrada vira reversed');
+select results_eq(
+  format($$select amount_cents, method, status, category, cash_session_id from public.transactions where reverses_id = %L$$, (select v from ids where k='in_a1')),
+  format($$values (7000, 'cash'::text, 'paid'::text, 'estorno'::text, %L::uuid)$$, (select v from ids where k='cs')),
+  'saída de estorno no caixa aberto');
+select is((select array_agg(distinct status) from public.commissions where appointment_id = (select v from ids where k='a1')), array['reversed'],
+  'comissões estornadas');
+select isnt((select refunded_at from public.appointments where id = (select v from ids where k='a1')), null, 'data do estorno');
+select is((select data->>'reason' from public.appointment_events where appointment_id = (select v from ids where k='a1') and event = 'refunded'),
+  'Cobrado em dobro', 'evento refunded com o motivo');
+
+select t.login((select v from ids where k='ana'));
+select throws_ok($$select t.refund('a1')$$, 'Atendimento já estornado.', 'não estorna duas vezes');
+select throws_ok($$select t.refund('a2', '  ')$$, 'Informe o motivo do estorno.', 'motivo obrigatório');
+
+-- Comissão já paga ao profissional: fica paga e ganha um abatimento negativo.
+select t.logout();
+update public.commissions set status = 'paid', paid_at = now() where appointment_id = (select v from ids where k='a2');
+select t.login((select v from ids where k='ana'));
+select t.refund('a2');
+select t.logout();
+select is((select count(*)::int from public.commissions where appointment_id = (select v from ids where k='a2') and status = 'paid'), 2,
+  'comissões pagas continuam pagas');
+select set_eq(
+  format($$select amount_cents, status from public.commissions where appointment_id = %L and reverses_id is not null$$, (select v from ids where k='a2')),
+  $$values (-1800, 'available'::text), (-1750, 'available'::text)$$,
+  'abatimento negativo disponível');
+
+-- Pix ainda pendente: só vira reversed, sem saída.
+select t.awaiting('a4');
+select t.login((select v from ids where k='rec'));
+select t.receive('a4', '[{"method": "pix", "amount_cents": 8000}]');
+select t.login((select v from ids where k='ana'));
+select t.refund('a4');
+select t.logout();
+select is((select status from public.transactions where appointment_id = (select v from ids where k='a4') and type = 'income'), 'reversed',
+  'Pix pendente vira reversed');
+select is((select count(*)::int from public.transactions where appointment_id = (select v from ids where k='a4') and type = 'expense'), 0,
+  'Pix nunca recebido não gera saída');
+select is(public.cash_session_expected((select v from ids where k='cs')) - 'pix_pending',
+  '{"cash": 10000, "debit": 0, "credit": 0, "pix": 0}'::jsonb, 'esperado desconta as saídas de estorno');
+
+-- Sem caixa aberto.
+select t.login((select v from ids where k='rec'));
+select public.close_cash_session((select v from ids where k='cs'), '{}');
+select t.login((select v from ids where k='ana'));
+select throws_ok($$select t.refund('a3')$$, 'Abra o caixa antes de estornar.', 'estorno exige caixa aberto');
 
 select * from finish();
 rollback;

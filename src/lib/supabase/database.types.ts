@@ -904,6 +904,32 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"refund_appointment":
+{ Args: { "p_appointment_id": string,"p_reason": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "remove_appointment_item":
 { Args: { "p_item_id": string }; Returns: {
               "arrived_at": string | null,

@@ -195,6 +195,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
         salonName={salon.name}
         timeZone={tz}
         canManage={canManage}
+        isAdmin={membership.role === "admin"}
         myProfessionalId={myProfessionalId ?? null}
         professionals={professionals}
         services={services}
