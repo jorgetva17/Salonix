@@ -231,6 +231,59 @@ begin
 end;
 $$;
 
+-- Admin marca como pagas as comissões disponíveis do profissional no mês (as
+-- negativas de estorno entram e abatem). Saldo ≤ 0: nada muda. Com p_expense_method,
+-- lança a despesa, no caixa aberto se houver. Devolve o valor pago.
+create or replace function public.pay_commissions(
+  p_salon_id uuid,
+  p_professional_id uuid,
+  p_month date,
+  p_expense_method text default null
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_month date := date_trunc('month', p_month)::date;
+  v_total integer;
+  v_name text;
+begin
+  if public.has_salon_role(p_salon_id, '{admin}') is not true then
+    raise exception 'Sem permissão.';
+  end if;
+  if p_expense_method is not null and p_expense_method not in ('cash', 'debit', 'credit', 'pix') then
+    raise exception 'Forma de pagamento inválida.';
+  end if;
+
+  -- Trava as linhas antes de somar, para dois cliques não pagarem duas vezes.
+  perform 1 from public.commissions
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available'
+  for update;
+  select coalesce(sum(amount_cents), 0) into v_total
+  from public.commissions
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available';
+  if v_total <= 0 then
+    return 0;
+  end if;
+
+  update public.commissions set status = 'paid', paid_at = now()
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available';
+
+  if p_expense_method is not null then
+    select name into v_name from public.professionals where id = p_professional_id;
+    insert into public.transactions (salon_id, type, category, amount_cents, method, status, paid_at, cash_session_id, description)
+    values (p_salon_id, 'expense', 'comissao', v_total, p_expense_method, 'paid', now(),
+            public.open_cash_session_id(p_salon_id), left('Comissão ' || v_name || ' ' || to_char(v_month, 'MM/YYYY'), 200));
+  end if;
+  return v_total;
+end;
+$$;
+
+revoke execute on function public.pay_commissions(uuid, uuid, date, text) from public, anon;
+grant execute on function public.pay_commissions(uuid, uuid, date, text) to authenticated;
+
 revoke execute on function public.refund_appointment(uuid, text) from public, anon;
 grant execute on function public.refund_appointment(uuid, text) to authenticated;
 

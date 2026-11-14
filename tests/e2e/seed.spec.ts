@@ -57,3 +57,22 @@ test.describe("agenda de demonstração do seed", () => {
     await expect(page.getByTestId("queue-item").filter({ hasText: "Bruna Souza" })).toBeVisible();
   });
 });
+
+test.describe("caixa e comissões de demonstração do seed", () => {
+  test("recepção vê o caixa aberto e o Diego aguardando pagamento", async ({ page }) => {
+    await signIn(page, "recepcao@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/caixa");
+    await expect(page.getByText(/Aberto em .* com R\$ 100,00/)).toBeVisible();
+    await expect(page.getByTestId("expected-cash")).toHaveText("R$ 180,00");
+    await expect(page.getByTestId("awaiting-payment")).toContainText("Diego Souza");
+  });
+
+  test("admin vê a comissão disponível do Paulo no mês", async ({ page }) => {
+    await signIn(page, "admin@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/financeiro");
+    await expect(page.getByTestId("commissions-Paulo Profissional").getByTestId("commission-available")).toHaveText("R$ 18,00");
+    await expect(page.getByTestId("commissions-Marcos").getByTestId("commission-available")).toHaveText("R$ 17,50");
+  });
+});

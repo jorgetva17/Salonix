@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(50);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -200,6 +200,45 @@ select is((select count(*)::int from public.transactions where appointment_id = 
   'Pix nunca recebido não gera saída');
 select is(public.cash_session_expected((select v from ids where k='cs')) - 'pix_pending',
   '{"cash": 10000, "debit": 0, "credit": 0, "pix": 0}'::jsonb, 'esperado desconta as saídas de estorno');
+
+-- Pagar comissões ------------------------------------------------------------------
+create function t.pay(p_method text default null) returns integer language sql as $$
+  select public.pay_commissions((select v from ids where k='salon_a'), (select v from ids where k='paulo'),
+    date_trunc('month', now() at time zone 'America/Sao_Paulo')::date, p_method);
+$$;
+grant execute on function t.pay(text) to authenticated;
+
+-- Só o abatimento de -3550 (do estorno de a2) e zeros: nada a pagar.
+select t.login((select v from ids where k='ana'));
+select is(t.pay(), 0, 'saldo negativo não paga nada');
+select t.logout();
+select is((select count(*)::int from public.commissions where professional_id = (select v from ids where k='paulo') and amount_cents < 0 and status = 'available'), 2,
+  'abatimento continua disponível');
+
+select t.awaiting('a5');
+select t.awaiting('a6');
+select t.awaiting('a7');
+select t.login((select v from ids where k='rec'));
+select t.receive('a5', '[{"method": "cash", "amount_cents": 8000}]');
+select t.receive('a6', '[{"method": "cash", "amount_cents": 8000}]');
+select t.receive('a7', '[{"method": "pix", "amount_cents": 8000}]');
+select throws_ok($$select t.pay()$$, 'Sem permissão.', 'recepção não paga comissão');
+select t.login((select v from ids where k='pro'));
+select throws_ok($$select t.pay()$$, 'Sem permissão.', 'profissional não paga comissão');
+
+select t.login((select v from ids where k='ana'));
+select is(t.pay('cash'), 3550, 'paga 2 × 3550 menos o abatimento de 3550');
+select t.logout();
+select is((select count(*)::int from public.commissions where professional_id = (select v from ids where k='paulo') and status = 'available'), 0,
+  'nada disponível depois de pagar');
+select is((select array_agg(distinct status) from public.commissions where appointment_id = (select v from ids where k='a7')), array['blocked'],
+  'comissão bloqueada não é paga');
+select results_eq(
+  $$select amount_cents, method, status, cash_session_id from public.transactions where category = 'comissao'$$,
+  format($$values (3550, 'cash'::text, 'paid'::text, %L::uuid)$$, (select v from ids where k='cs')),
+  'despesa de comissão no caixa aberto');
+select t.login((select v from ids where k='ana'));
+select is(t.pay('cash'), 0, 'pagar de novo não paga nada');
 
 -- Sem caixa aberto.
 select t.login((select v from ids where k='rec'));

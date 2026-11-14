@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, localDayRange, todayIn, toLocalMinutes, weekdayOf } from "@/lib/agenda/time";
+import { addDays, addMonths, localDayRange, monthRange, todayIn, toLocalMinutes, weekdayOf } from "@/lib/agenda/time";
 
 const SP = "America/Sao_Paulo";
 
@@ -38,5 +38,20 @@ describe("datas", () => {
   });
   it("todayIn usa o fuso", () => {
     expect(todayIn(SP, new Date("2026-11-21T02:00:00Z"))).toBe("2026-11-20");
+  });
+});
+
+describe("monthRange", () => {
+  it("mês local de São Paulo em UTC", () => {
+    expect(monthRange("2026-11", SP)).toEqual({ from: "2026-11-01T03:00:00.000Z", to: "2026-12-01T03:00:00.000Z" });
+  });
+
+  it("dezembro vira o ano", () => {
+    expect(monthRange("2026-12", SP).to).toBe("2027-01-01T03:00:00.000Z");
+  });
+
+  it("addMonths anda e volta pelo ano", () => {
+    expect(addMonths("2026-12", 1)).toBe("2027-01");
+    expect(addMonths("2026-01", -1)).toBe("2025-12");
   });
 });

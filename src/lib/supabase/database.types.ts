@@ -852,6 +852,9 @@ isOneToOne: false
 "open_cash_session_id":
 { Args: { "p_salon_id": string }; Returns: string
                            },
+"pay_commissions":
+{ Args: { "p_expense_method"?: string,"p_month": string,"p_professional_id": string,"p_salon_id": string }; Returns: number
+                           },
 "recalc_appointment_total":
 { Args: { "p_appointment_id": string }; Returns: {
               "arrived_at": string | null,

@@ -72,3 +72,18 @@ export function timeToMinutes(time: string): number {
 export function minutesToTime(minutes: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
+
+/** "YYYY-MM" + n meses. */
+export function addMonths(month: string, n: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return d.toISOString().slice(0, 7);
+}
+
+/** Início do mês local (`YYYY-MM`) e do seguinte, em ISO UTC. */
+export function monthRange(month: string, timeZone: string): { from: string; to: string } {
+  return {
+    from: new Date(localMidnight(`${month}-01`, timeZone)).toISOString(),
+    to: new Date(localMidnight(`${addMonths(month, 1)}-01`, timeZone)).toISOString(),
+  };
+}

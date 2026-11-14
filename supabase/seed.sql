@@ -101,3 +101,52 @@ begin
     (v_salon, v_scheduled, 'created', '00000000-0000-4000-8000-0000000000a2'),
     (v_salon, v_walk_in, 'created', '00000000-0000-4000-8000-0000000000a2');
 end $$;
+
+-- Caixa de demonstração (Fase 4) ---------------------------------------------
+-- Caixa aberto pela recepção com R$ 100,00; dois atendimentos de hoje já pagos em
+-- dinheiro (com comissão disponível) e o Diego aguardando pagamento.
+
+do $$
+declare
+  v_salon uuid := '00000000-0000-4000-8000-000000000001';
+  v_rec uuid := '00000000-0000-4000-8000-0000000000a2';
+  v_paulo uuid := '00000000-0000-4000-8000-0000000000c1';
+  v_marcos uuid := '00000000-0000-4000-8000-0000000000c2';
+  v_corte uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_barba uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_month date := date_trunc('month', now() at time zone 'America/Sao_Paulo')::date;
+  v_session uuid := '00000000-0000-4000-8000-0000000000e1';
+  v_paid_paulo uuid := '00000000-0000-4000-8000-0000000000d3';
+  v_paid_marcos uuid := '00000000-0000-4000-8000-0000000000d4';
+  v_diego_appt uuid := '00000000-0000-4000-8000-0000000000d5';
+  v_carlos uuid := (select id from public.customers where salon_id = v_salon and name = 'Carlos Cliente');
+  v_jose uuid := (select id from public.customers where salon_id = v_salon and name = 'José Ávila');
+  v_diego uuid;
+begin
+  insert into public.customers (salon_id, name, phone) values (v_salon, 'Diego Souza', '11954321098') returning id into v_diego;
+  insert into public.cash_sessions (id, salon_id, opened_by, opened_at, opening_cents)
+  values (v_session, v_salon, v_rec, now() - interval '4 hours', 10000);
+
+  insert into public.appointments (id, salon_id, customer_id, professional_id, kind, status, starts_at, ends_at, arrived_at, duration_minutes, total_cents, created_by) values
+    (v_paid_paulo, v_salon, v_carlos, v_paulo, 'walk_in', 'paid', now() - interval '3 hours', now() - interval '150 minutes', now() - interval '3 hours', 30, 4500, v_rec),
+    (v_paid_marcos, v_salon, v_jose, v_marcos, 'walk_in', 'paid', now() - interval '3 hours', now() - interval '150 minutes', now() - interval '3 hours', 30, 3500, v_rec),
+    (v_diego_appt, v_salon, v_diego, v_paulo, 'walk_in', 'awaiting_payment', now() - interval '1 hour', now() - interval '30 minutes', now() - interval '1 hour', 30, 3500, v_rec);
+  insert into public.appointment_items (id, salon_id, appointment_id, item_type, service_id, professional_id, unit_price_cents, duration_minutes) values
+    ('00000000-0000-4000-8000-0000000000f3', v_salon, v_paid_paulo, 'service', v_corte, v_paulo, 4500, 30),
+    ('00000000-0000-4000-8000-0000000000f4', v_salon, v_paid_marcos, 'service', v_barba, v_marcos, 3500, 30),
+    ('00000000-0000-4000-8000-0000000000f5', v_salon, v_diego_appt, 'service', v_barba, v_paulo, 3500, 30);
+  insert into public.appointment_events (salon_id, appointment_id, event, actor) values
+    (v_salon, v_paid_paulo, 'created', v_rec), (v_salon, v_paid_paulo, 'called', v_rec), (v_salon, v_paid_paulo, 'completed', v_rec),
+    (v_salon, v_paid_paulo, 'paid', v_rec),
+    (v_salon, v_paid_marcos, 'created', v_rec), (v_salon, v_paid_marcos, 'called', v_rec), (v_salon, v_paid_marcos, 'completed', v_rec),
+    (v_salon, v_paid_marcos, 'paid', v_rec),
+    (v_salon, v_diego_appt, 'created', v_rec), (v_salon, v_diego_appt, 'called', v_rec), (v_salon, v_diego_appt, 'completed', v_rec);
+
+  insert into public.transactions (salon_id, type, category, amount_cents, method, status, paid_at, appointment_id, cash_session_id, created_by) values
+    (v_salon, 'income', 'atendimento', 4500, 'cash', 'paid', now() - interval '150 minutes', v_paid_paulo, v_session, v_rec),
+    (v_salon, 'income', 'atendimento', 3500, 'cash', 'paid', now() - interval '150 minutes', v_paid_marcos, v_session, v_rec);
+  -- Paulo: 40% padrão no corte; Marcos: 50% padrão.
+  insert into public.commissions (salon_id, appointment_id, appointment_item_id, professional_id, base_cents, percent, amount_cents, reference_month, status) values
+    (v_salon, v_paid_paulo, '00000000-0000-4000-8000-0000000000f3', v_paulo, 4500, 40, 1800, v_month, 'available'),
+    (v_salon, v_paid_marcos, '00000000-0000-4000-8000-0000000000f4', v_marcos, 3500, 50, 1750, v_month, 'available');
+end $$;
