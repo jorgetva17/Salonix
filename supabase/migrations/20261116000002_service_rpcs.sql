@@ -168,12 +168,19 @@ declare
   v_appointment_id uuid;
   v_appt public.appointments;
   v_service_id uuid;
+  v_item_professional uuid;
 begin
-  select appointment_id, service_id into v_appointment_id, v_service_id from public.appointment_items where id = p_item_id;
+  select appointment_id, service_id, professional_id into v_appointment_id, v_service_id, v_item_professional
+  from public.appointment_items where id = p_item_id;
   if v_appointment_id is null then
     raise exception 'Atendimento não encontrado.';
   end if;
   v_appt := public.lock_adjustable_appointment(v_appointment_id);
+  -- Item de outro profissional (a comissão é dele): só admin/recepção remove.
+  if v_item_professional is distinct from v_appt.professional_id
+     and public.has_salon_role(v_appt.salon_id, '{admin,reception}') is not true then
+    raise exception 'Sem permissão.';
+  end if;
   if (select count(*) from public.appointment_items where appointment_id = v_appt.id and item_type = 'service') <= 1 then
     raise exception 'Atendimento precisa de pelo menos um serviço.';
   end if;

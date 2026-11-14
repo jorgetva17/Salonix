@@ -38,24 +38,29 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     .eq("salon_id", salon.id)
     .eq("reference_month", `${month}-01`)
     .order("created_at");
-  if (error) throw error;
+  // Sobras de meses anteriores (ex.: abatimento de estorno) entram no próximo pagamento.
+  const { data: earlier, error: e2 } = await supabase
+    .from("commissions")
+    .select("professional_id, amount_cents, professionals(name)")
+    .eq("salon_id", salon.id)
+    .eq("status", "available")
+    .lt("reference_month", `${month}-01`);
+  if (error || e2) throw error ?? e2;
 
-  type Group = { id: string; name: string; available: number; blocked: number; paid: number; rows: typeof rows };
+  type Group = { id: string; name: string; available: number; carry: number; blocked: number; paid: number; rows: typeof rows };
   const groups = new Map<string, Group>();
+  const groupFor = (id: string, name: string) => {
+    const g = groups.get(id) ?? { id, name, available: 0, carry: 0, blocked: 0, paid: 0, rows: [] };
+    groups.set(id, g);
+    return g;
+  };
+  for (const r of earlier) groupFor(r.professional_id, r.professionals?.name ?? "").carry += r.amount_cents;
   for (const r of rows) {
-    const g = groups.get(r.professional_id) ?? {
-      id: r.professional_id,
-      name: r.professionals?.name ?? "",
-      available: 0,
-      blocked: 0,
-      paid: 0,
-      rows: [],
-    };
+    const g = groupFor(r.professional_id, r.professionals?.name ?? "");
     if (r.status === "available") g.available += r.amount_cents;
     else if (r.status === "blocked") g.blocked += r.amount_cents;
     else if (r.status === "paid") g.paid += r.amount_cents;
     g.rows.push(r);
-    groups.set(r.professional_id, g);
   }
   const list = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const [year, monthNumber] = month.split("-").map(Number);
@@ -107,8 +112,19 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                   </dd>
                 </div>
               </dl>
-              {isAdmin && g.available > 0 && (
-                <PayCommissionsButton key={g.available} professionalId={g.id} professionalName={g.name} month={month} amountCents={g.available} />
+              {g.carry !== 0 && (
+                <p className="text-sm text-muted-foreground" data-testid="commission-carry">
+                  Saldo de meses anteriores: {formatBRL(g.carry)} (entra no próximo pagamento)
+                </p>
+              )}
+              {isAdmin && g.available + g.carry > 0 && (
+                <PayCommissionsButton
+                  key={g.available + g.carry}
+                  professionalId={g.id}
+                  professionalName={g.name}
+                  month={month}
+                  amountCents={g.available + g.carry}
+                />
               )}
               <details>
                 <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium">Ver atendimentos ({g.rows.length})</summary>

@@ -561,6 +561,9 @@ isOneToOne: false
 "cash_session_expected":
 { Args: { "p_session_id": string }; Returns: Json
                            },
+"cash_session_summary":
+{ Args: { "p_salon_id": string }; Returns: Json
+                           },
 "close_cash_session":
 { Args: { "p_counted": Json,"p_session_id": string }; Returns: {
               "closed_at": string | null,

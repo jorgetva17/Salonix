@@ -29,6 +29,8 @@ test("profissional vê a agenda sem o botão de agendar", async ({ page }) => {
 });
 
 test("detalhe do atendimento: reagendar, lembrete, iniciar, concluir e cancelar", async ({ page }) => {
+  // Fluxo longo (salão novo + 3 atendimentos): passa de 60 s na suíte completa.
+  test.slow();
   await setupSalonWithAgenda(page, "detalhe");
   await bookTomorrow(page, "Bia Teste", "10:00", "(11) 98765-4321");
 

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(56);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -243,6 +243,30 @@ select results_eq(
   'despesa de comissão no caixa aberto');
 select t.login((select v from ids where k='ana'));
 select is(t.pay('cash'), 0, 'pagar de novo não paga nada');
+
+-- A recepção não lê a despesa de comissão, mas o esperado do caixa precisa dela.
+select t.login((select v from ids where k='rec'));
+select is(public.cash_session_summary((select v from ids where k='salon_a')),
+  '{"cash": 22450, "debit": 0, "credit": 0, "pix": 0, "pix_pending": 8000}'::jsonb,
+  'recepção vê o esperado do banco, com a despesa de comissão');
+select t.login((select v from ids where k='pro'));
+select throws_ok(format('select public.cash_session_summary(%L)', (select v from ids where k='salon_a')),
+  'Sem permissão.', 'profissional não vê o esperado do caixa');
+
+-- Abatimento de mês anterior entra no próximo pagamento.
+select t.logout();
+insert into public.commissions (salon_id, appointment_id, appointment_item_id, professional_id, base_cents, percent, amount_cents, reference_month, status, reverses_id)
+select salon_id, appointment_id, appointment_item_id, professional_id, -2500, percent, -1000,
+       (date_trunc('month', now() at time zone 'America/Sao_Paulo') - interval '1 month')::date, 'available', id
+from public.commissions where appointment_id = (select v from ids where k='a5') limit 1;
+select t.awaiting('a8');
+select t.login((select v from ids where k='rec'));
+select t.receive('a8', '[{"method": "cash", "amount_cents": 8000}]');
+select t.login((select v from ids where k='ana'));
+select is(t.pay(), 2550, 'saldo negativo do mês anterior abate o pagamento');
+select t.logout();
+select is((select count(*)::int from public.commissions where professional_id = (select v from ids where k='paulo') and status = 'available'), 0,
+  'saldo anterior também fica pago');
 
 -- Sem caixa aberto.
 select t.login((select v from ids where k='rec'));

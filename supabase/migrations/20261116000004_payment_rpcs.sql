@@ -37,15 +37,17 @@ begin
 end;
 $$;
 
--- Caixa aberto do salão (ou nulo).
+-- Caixa aberto do salão (ou nulo), travado em modo compartilhado até o fim da
+-- transação: um fechamento simultâneo espera, ou já fechou e aqui vem nulo. Sem a
+-- trava, um lançamento podia cair num caixa que acabou de ser fechado.
 create or replace function public.open_cash_session_id(p_salon_id uuid)
 returns uuid
 language sql
-stable
+volatile
 security definer
 set search_path = ''
 as $$
-  select id from public.cash_sessions where salon_id = p_salon_id and closed_at is null;
+  select id from public.cash_sessions where salon_id = p_salon_id and closed_at is null for share;
 $$;
 
 -- Primeiro dia do mês corrente no fuso do salão.
@@ -160,10 +162,16 @@ as $$
 declare
   v_tx public.transactions;
 begin
-  select * into v_tx from public.transactions where id = p_transaction_id for update;
+  select * into v_tx from public.transactions where id = p_transaction_id;
   if public.has_salon_role(v_tx.salon_id, '{admin,reception}') is not true then
     raise exception 'Sem permissão.';
   end if;
+  -- Trava o atendimento primeiro: dois Pix do mesmo atendimento, ou Pix e estorno,
+  -- passam um de cada vez e cada um enxerga o que o outro gravou.
+  if v_tx.appointment_id is not null then
+    perform public.lock_appointment(v_tx.appointment_id);
+  end if;
+  select * into v_tx from public.transactions where id = p_transaction_id for update;
   if v_tx.type <> 'income' or v_tx.method is distinct from 'pix' or v_tx.status <> 'pending' then
     raise exception 'Pix já confirmado.';
   end if;
@@ -235,8 +243,9 @@ begin
 end;
 $$;
 
--- Admin marca como pagas as comissões disponíveis do profissional no mês (as
--- negativas de estorno entram e abatem). Saldo ≤ 0: nada muda. Com p_expense_method,
+-- Admin marca como pagas as comissões disponíveis do profissional até o mês
+-- escolhido, inclusive sobras de meses anteriores (as negativas de estorno entram e
+-- abatem, mesmo vindas de outro mês). Saldo ≤ 0: nada muda. Com p_expense_method,
 -- lança a despesa, no caixa aberto se houver. Devolve o valor pago.
 create or replace function public.pay_commissions(
   p_salon_id uuid,
@@ -263,17 +272,17 @@ begin
 
   -- Trava as linhas antes de somar, para dois cliques não pagarem duas vezes.
   perform 1 from public.commissions
-  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available'
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month <= v_month and status = 'available'
   for update;
   select coalesce(sum(amount_cents), 0) into v_total
   from public.commissions
-  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available';
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month <= v_month and status = 'available';
   if v_total <= 0 then
     return 0;
   end if;
 
   update public.commissions set status = 'paid', paid_at = now()
-  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month = v_month and status = 'available';
+  where salon_id = p_salon_id and professional_id = p_professional_id and reference_month <= v_month and status = 'available';
 
   if p_expense_method is not null then
     select name into v_name from public.professionals where id = p_professional_id;

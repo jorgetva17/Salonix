@@ -3,7 +3,6 @@ import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
 import { EmptyState } from "@/components/states/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@/lib/cash/methods";
-import { cashSummary, type CashTx } from "@/lib/cash/summary";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
@@ -11,6 +10,15 @@ import { CloseCashForm, ConfirmPixButton, OpenCashForm } from "./cash-client";
 import { PaymentDialog } from "./payment-dialog";
 
 export const metadata = { title: "Caixa · Salonix" };
+
+function toSummary(json: Record<string, number>) {
+  const expected = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, json[m] ?? 0])) as Record<PaymentMethod, number>;
+  return {
+    expected,
+    pixPendingCents: json.pix_pending ?? 0,
+    totalExpectedCents: PAYMENT_METHODS.reduce((sum, m) => sum + expected[m], 0),
+  };
+}
 
 export default async function CashPage() {
   const { salon } = await requireRole(["admin", "reception"]);
@@ -44,20 +52,22 @@ export default async function CashPage() {
   ]);
   if (e1 || e2 || e4 || e5) throw e1 ?? e2 ?? e4 ?? e5;
 
-  const { data: txs, error: e3 } = open
-    ? await supabase
-        .from("transactions")
-        .select("id, type, category, method, status, amount_cents, paid_at, created_at, appointments(customers(name))")
-        .eq("cash_session_id", open.id)
-        .order("created_at", { ascending: false })
-    : { data: [], error: null };
-  if (e3) throw e3;
-  const summary = open
-    ? cashSummary(
-        open.opening_cents,
-        txs.map((t) => ({ type: t.type, method: t.method, status: t.status, amountCents: t.amount_cents, paidAt: t.paid_at }) as CashTx),
-      )
-    : null;
+  const [{ data: txs, error: e3 }, { data: expectedJson, error: e6 }] = open
+    ? await Promise.all([
+        supabase
+          .from("transactions")
+          .select("id, type, category, method, status, amount_cents, created_at, appointments(customers(name))")
+          .eq("cash_session_id", open.id)
+          .order("created_at", { ascending: false }),
+        // O esperado vem do banco: a recepção não lê as despesas de comissão.
+        supabase.rpc("cash_session_summary", { p_salon_id: salon.id }),
+      ])
+    : [
+        { data: [], error: null },
+        { data: null, error: null },
+      ];
+  if (e3 || e6) throw e3 ?? e6;
+  const summary = open && expectedJson ? toSummary(expectedJson as Record<string, number>) : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-20 md:pb-0">

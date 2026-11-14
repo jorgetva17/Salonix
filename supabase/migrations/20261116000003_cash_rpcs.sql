@@ -54,6 +54,27 @@ $$;
 
 revoke execute on function public.cash_session_expected(uuid) from public, anon, authenticated;
 
+-- Esperado do caixa aberto para a tela (admin/recepção). A recepção não lê as
+-- despesas de comissão, então a tela não pode somar sozinha: o número vem daqui.
+create or replace function public.cash_session_summary(p_salon_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if public.has_salon_role(p_salon_id, '{admin,reception}') is not true then
+    raise exception 'Sem permissão.';
+  end if;
+  return public.cash_session_expected(
+    (select id from public.cash_sessions where salon_id = p_salon_id and closed_at is null));
+end;
+$$;
+
+revoke execute on function public.cash_session_summary(uuid) from public, anon;
+grant execute on function public.cash_session_summary(uuid) to authenticated;
+
 create or replace function public.close_cash_session(p_session_id uuid, p_counted jsonb)
 returns public.cash_sessions
 language plpgsql
