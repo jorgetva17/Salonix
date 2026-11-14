@@ -136,6 +136,11 @@ begin
   -- Mesma checagem dos outros RPCs: serviço ativo do salão.
   perform public.services_totals(v_appt.salon_id, array[p_service_id]);
   select * into v_service from public.services where id = p_service_id;
+  -- Só admin/recepção lançam item em nome de outro profissional (a comissão vai para ele).
+  if p_professional_id is distinct from v_appt.professional_id and p_professional_id is not null
+     and public.has_salon_role(v_appt.salon_id, '{admin,reception}') is not true then
+    raise exception 'Sem permissão.';
+  end if;
   if p_professional_id is not null
      and not exists (select 1 from public.professionals where id = p_professional_id and salon_id = v_appt.salon_id and active) then
     raise exception 'Profissional não encontrado.';

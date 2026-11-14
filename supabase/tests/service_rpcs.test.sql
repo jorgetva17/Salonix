@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(22);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -88,6 +88,9 @@ select throws_ok(
 
 select t.login((select v from ids where k='pro1'));
 select lives_ok(format('select t.add(%L, %L)', 'a1', 'barba'), 'profissional adiciona no próprio atendimento em curso');
+select throws_ok(
+  format('select public.add_appointment_item(%L, %L, %L)', (select v from ids where k='a1'), (select v from ids where k='barba'), (select v from ids where k='p2')),
+  'Sem permissão.', 'profissional não lança item em nome de colega');
 select t.logout();
 insert into ids select 'item_a1', id from public.appointment_items where appointment_id = (select v from ids where k='a1') limit 1;
 select t.login((select v from ids where k='pro2'));
