@@ -65,3 +65,35 @@ test("profissional não acessa a tela de profissionais", async ({ page }) => {
   await page.goto("/profissionais");
   await expect(page).toHaveURL(/\/painel$/);
 });
+
+test("admin define jornada, vê erro de sobreposição e cria férias", async ({ page }) => {
+  await signUpSalon(page, { email: uniqueEmail("jornada"), salonName: "Salão da Jornada" });
+  await createProfessional(page, "Lia", "40");
+  await page.getByRole("link", { name: /Lia/ }).click();
+
+  const tuesday = page.getByTestId("schedule-2");
+  await tuesday.getByRole("checkbox", { name: "Terça" }).check();
+  await tuesday.getByLabel("Terça, início do intervalo 1").fill("09:00");
+  await tuesday.getByLabel("Terça, fim do intervalo 1").fill("12:00");
+  await tuesday.getByRole("button", { name: "Adicionar intervalo em Terça" }).click();
+  await tuesday.getByLabel("Terça, início do intervalo 2").fill("11:00");
+  await tuesday.getByLabel("Terça, fim do intervalo 2").fill("14:00");
+  await page.getByRole("button", { name: "Salvar jornada" }).click();
+  await expect(tuesday.getByRole("alert")).toHaveText("Horários se sobrepõem em Terça");
+
+  await tuesday.getByLabel("Terça, início do intervalo 2").fill("13:00");
+  await tuesday.getByLabel("Terça, fim do intervalo 2").fill("19:00");
+  await page.getByRole("button", { name: "Salvar jornada" }).click();
+  await expect(page.getByText("Jornada salva")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByTestId("schedule-2").getByLabel("Terça, fim do intervalo 2")).toHaveValue("19:00");
+  await expect(page.getByTestId("schedule-1").getByText("Não trabalha")).toBeVisible();
+
+  await page.getByLabel("Tipo", { exact: true }).selectOption({ label: "Férias" });
+  await page.getByLabel("De", { exact: true }).fill("2030-01-10");
+  await page.getByLabel("Até", { exact: true }).fill("2030-01-20");
+  await page.getByRole("button", { name: "Adicionar bloqueio" }).click();
+  await expect(page.getByTestId("block-row")).toContainText("Férias");
+  await expect(page.getByTestId("block-row")).toContainText("10/01/2030 a 20/01/2030");
+});

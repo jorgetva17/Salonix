@@ -75,6 +75,32 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"professional_schedules": {
+                  Row: {
+                    "created_at": string,"ends_at": string,"id": string,"professional_id": string,"salon_id": string,"starts_at": string,"weekday": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"ends_at": string,"id"?: string,"professional_id": string,"salon_id": string,"starts_at": string,"weekday": number
+                  }
+                  Update: {
+                    "created_at"?: string,"ends_at"?: string,"id"?: string,"professional_id"?: string,"salon_id"?: string,"starts_at"?: string,"weekday"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "professional_schedules_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "professional_schedules_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"professionals": {
                   Row: {
                     "active": boolean,"color": string,"created_at": string,"id": string,"name": string,"salon_id": string,"updated_at": string,"user_id": string | null
@@ -163,6 +189,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"schedule_blocks": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"ends_at": string,"id": string,"kind": string,"note": string | null,"professional_id": string,"salon_id": string,"starts_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"ends_at": string,"id"?: string,"kind": string,"note"?: string | null,"professional_id": string,"salon_id": string,"starts_at": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"ends_at"?: string,"id"?: string,"kind"?: string,"note"?: string | null,"professional_id"?: string,"salon_id"?: string,"starts_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "schedule_blocks_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "schedule_blocks_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "active": boolean,"created_at": string,"duration_minutes": number,"id": string,"name": string,"price_cents": number,"salon_id": string,"updated_at": string
@@ -226,6 +278,24 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"create_schedule_block":
+{ Args: { "p_ends_local": string,"p_kind": string,"p_note"?: string,"p_professional_id": string,"p_starts_local": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"ends_at": string,
+"id": string,
+"kind": string,
+"note": string | null,
+"professional_id": string,
+"salon_id": string,
+"starts_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "schedule_blocks"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "current_confirmed_email":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -262,6 +332,22 @@ isOneToOne: false
         to: "professionals"
         isOneToOne: true
         isSetofReturn: false
+      } },
+"set_professional_schedule":
+{ Args: { "p_professional_id": string,"p_slots": Json }; Returns: {
+              "created_at": string,
+"ends_at": string,
+"id": string,
+"professional_id": string,
+"salon_id": string,
+"starts_at": string,
+"weekday": number
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "professional_schedules"
+        isOneToOne: false
+        isSetofReturn: true
       } },
 "shares_salon_with":
 { Args: { "p_user_id": string }; Returns: boolean

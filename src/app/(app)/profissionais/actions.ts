@@ -6,6 +6,7 @@ import type { ActionResult, FormState } from "@/lib/action-result";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { firstErrors } from "@/lib/validation/auth";
+import { blockSchema, scheduleSchema, type ScheduleSlot } from "@/lib/professionals/schedule";
 import { parsePercent, professionalSchema } from "@/lib/validation/professionals";
 
 const uuid = z.uuid();
@@ -97,5 +98,67 @@ export async function linkProfessionalUser(professionalId: string, userId: strin
     return { ok: false, error: "Não foi possível alterar o acesso." };
   }
   revalidate(ids.data.professionalId);
+  return { ok: true };
+}
+
+export async function saveSchedule(professionalId: string, slots: ScheduleSlot[]): Promise<ActionResult> {
+  await requireRole(["admin"]);
+  const id = uuid.safeParse(professionalId);
+  const parsed = scheduleSchema.safeParse(slots);
+  if (!id.success) return { ok: false, error: "Profissional inválido." };
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("set_professional_schedule", {
+    p_professional_id: id.data,
+    p_slots: parsed.data.map((s) => ({ weekday: s.weekday, starts_at: s.startsAt, ends_at: s.endsAt })),
+  });
+  if (error) {
+    return {
+      ok: false,
+      error: error.message === "Horários se sobrepõem na jornada." ? error.message : "Não foi possível salvar a jornada.",
+    };
+  }
+  revalidate(id.data);
+  return { ok: true };
+}
+
+export async function addScheduleBlock(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(["admin"]);
+  const { professionalId, ...raw } = Object.fromEntries(formData);
+  const id = uuid.safeParse(professionalId);
+  if (!id.success) return { ok: false, error: "Profissional inválido." };
+  const parsed = blockSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: "Revise os campos destacados.", fieldErrors: firstErrors(parsed) };
+  }
+  const { kind, note, startsLocal, endsLocal } = parsed.data;
+
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("create_schedule_block", {
+    p_professional_id: id.data,
+    p_starts_local: startsLocal,
+    p_ends_local: endsLocal,
+    p_kind: kind,
+    p_note: note ?? undefined,
+  });
+  if (error) return { ok: false, error: "Não foi possível criar o bloqueio." };
+  revalidate(id.data);
+  return { ok: true, message: "Bloqueio criado." };
+}
+
+export async function removeScheduleBlock(blockId: string): Promise<ActionResult> {
+  const { salon } = await requireRole(["admin"]);
+  const id = uuid.safeParse(blockId);
+  if (!id.success) return { ok: false, error: "Bloqueio inválido." };
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("schedule_blocks")
+    .delete()
+    .eq("id", id.data)
+    .eq("salon_id", salon.id)
+    .select("professional_id");
+  if (error) return { ok: false, error: "Não foi possível remover o bloqueio." };
+  revalidate(data[0]?.professional_id);
   return { ok: true };
 }
