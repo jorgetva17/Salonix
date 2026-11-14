@@ -70,6 +70,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 }
 
 export type AppointmentDetails = {
+  status: string;
   notes: string | null;
   events: { event: string; at: string; actorName: string | null; reason: string | null }[];
 };
@@ -79,7 +80,7 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
   if (!uuid.safeParse(id).success) return null;
   const supabase = await createServerClient();
   const [{ data: appointment }, { data: events }] = await Promise.all([
-    supabase.from("appointments").select("notes").eq("id", id).maybeSingle(),
+    supabase.from("appointments").select("status, notes").eq("id", id).maybeSingle(),
     supabase.from("appointment_events").select("event, actor, data, created_at").eq("appointment_id", id).order("created_at"),
   ]);
   if (!appointment) return null;
@@ -89,6 +90,7 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
     : { data: [] };
   const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
   return {
+    status: appointment.status,
     notes: appointment.notes,
     events: (events ?? []).map((e) => ({
       event: e.event,

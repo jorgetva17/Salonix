@@ -68,6 +68,8 @@ function AppointmentDetail({
   const professional = ctx.professionals.find((p) => p.id === a.professionalId);
   const isOwn = ctx.myProfessionalId !== null && ctx.myProfessionalId === a.professionalId;
   const canAct = ctx.canManage || isOwn;
+  // Status lido agora: a agenda pode ainda não ter recebido a última mudança.
+  const status = details?.status ?? a.status;
 
   useEffect(() => {
     startTransition(async () => setDetails(await getAppointmentDetails(a.id)));
@@ -95,7 +97,7 @@ function AppointmentDetail({
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted-foreground">Status</dt>
-        <dd data-testid="appointment-status">{APPOINTMENT_STATUS_LABELS[a.status]}</dd>
+        <dd data-testid="appointment-status">{APPOINTMENT_STATUS_LABELS[status]}</dd>
         <dt className="text-muted-foreground">Serviços</dt>
         <dd>{a.services.join(" + ")}</dd>
         <dt className="text-muted-foreground">Total</dt>
@@ -114,19 +116,19 @@ function AppointmentDetail({
         )}
       </dl>
 
-      {mode === "view" && (
+      {mode === "view" && details && (
         <div className="flex flex-wrap gap-2">
-          {a.status === "scheduled" && canAct && (
+          {status === "scheduled" && canAct && (
             <Button className="h-11" disabled={pending} onClick={() => run(() => startAppointment(a.id), "Atendimento iniciado")}>
               Iniciar
             </Button>
           )}
-          {a.status === "in_progress" && canAct && (
+          {status === "in_progress" && canAct && (
             <Button className="h-11" disabled={pending} onClick={() => run(() => completeAppointment(a.id), "Atendimento concluído")}>
               Concluir
             </Button>
           )}
-          {a.status === "scheduled" && ctx.canManage && (
+          {status === "scheduled" && ctx.canManage && (
             <>
               <Button variant="outline" className="h-11" onClick={() => setMode("reschedule")}>
                 Reagendar
@@ -139,7 +141,7 @@ function AppointmentDetail({
               </Button>
             </>
           )}
-          {a.status === "scheduled" && a.customerPhone && (
+          {status === "scheduled" && a.customerPhone && (
             <a
               href={whatsappReminderUrl({
                 phone: a.customerPhone,
