@@ -475,6 +475,25 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"add_appointment_item":
+{ Args: { "p_appointment_id": string,"p_professional_id"?: string,"p_service_id": string }; Returns: {
+              "appointment_id": string,
+"created_at": string,
+"duration_minutes": number,
+"id": string,
+"item_type": string,
+"professional_id": string | null,
+"quantity": number,
+"salon_id": string,
+"service_id": string,
+"unit_price_cents": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointment_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "assert_slot_available":
 { Args: { "p_ends_at": string,"p_professional_id": string,"p_starts_at": string,"p_timezone": string }; Returns: undefined
                            },
@@ -671,6 +690,32 @@ isOneToOne: false
 "link_professional_user":
 { Args: { "p_professional_id": string,"p_user_id": string }; Returns: undefined
                            },
+"lock_adjustable_appointment":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "lock_appointment":
 { Args: { "p_appointment_id": string }; Returns: {
               "arrived_at": string | null,
@@ -731,8 +776,86 @@ isOneToOne: false
 "my_professional_id":
 { Args: { "p_salon_id": string }; Returns: string
                            },
+"recalc_appointment_total":
+{ Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"remove_appointment_item":
+{ Args: { "p_item_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "reschedule_appointment":
 { Args: { "p_appointment_id": string,"p_professional_id": string,"p_starts_local": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"revert_appointment_start":
+{ Args: { "p_appointment_id": string }; Returns: {
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,

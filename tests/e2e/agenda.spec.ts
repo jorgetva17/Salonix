@@ -74,3 +74,31 @@ test("detalhe do atendimento: reagendar, lembrete, iniciar, concluir e cancelar"
   await dialog.getByRole("checkbox", { name: /Corte/ }).check();
   await expect(dialog.getByRole("radio", { name: "14:00" })).toBeVisible();
 });
+
+test("atendimento em curso: adicionar e remover serviço e desfazer o início", async ({ page }) => {
+  await setupSalonWithAgenda(page, "itens");
+  await bookTomorrow(page, "Duda Teste", "10:00");
+
+  const duda = page.getByTestId("agenda-appointment").filter({ hasText: "Duda Teste" });
+  await duda.click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Iniciar" }).click();
+  await expect(dialog).toBeHidden();
+
+  await duda.click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Serviço para adicionar").selectOption({ label: "Corte · R$ 40,00" });
+  await dialog.getByRole("button", { name: "Adicionar" }).click();
+  await expect(dialog.getByTestId("appointment-total")).toHaveText("R$ 80,00");
+  await expect(dialog.getByTestId("appointment-items").getByRole("listitem")).toHaveCount(2);
+  await dialog.getByRole("button", { name: "Remover Corte" }).first().click();
+  await expect(dialog.getByTestId("appointment-total")).toHaveText("R$ 40,00");
+  await expect(dialog.getByTestId("appointment-history")).toContainText("Serviço removido");
+
+  await dialog.getByRole("button", { name: "Desfazer início" }).click();
+  await dialog.getByRole("button", { name: "Desfazer início" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(duda).toContainText("10:00");
+  await duda.click();
+  await expect(page.getByRole("dialog").getByTestId("appointment-status")).toHaveText("Agendado");
+});

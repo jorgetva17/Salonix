@@ -80,6 +80,10 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 export type AppointmentDetails = {
   status: string;
   notes: string | null;
+  totalCents: number;
+  discountCents: number;
+  refundedAt: string | null;
+  items: { id: string; serviceName: string; unitPriceCents: number; quantity: number }[];
   events: { event: string; at: string; actorName: string | null; reason: string | null }[];
 };
 
@@ -87,9 +91,14 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
   await requireRole();
   if (!uuid.safeParse(id).success) return null;
   const supabase = await createServerClient();
-  const [{ data: appointment }, { data: events }] = await Promise.all([
-    supabase.from("appointments").select("status, notes").eq("id", id).maybeSingle(),
+  const [{ data: appointment }, { data: events }, { data: items }] = await Promise.all([
+    supabase.from("appointments").select("status, notes, total_cents, discount_cents, refunded_at").eq("id", id).maybeSingle(),
     supabase.from("appointment_events").select("event, actor, data, created_at").eq("appointment_id", id).order("created_at"),
+    supabase
+      .from("appointment_items")
+      .select("id, unit_price_cents, quantity, services(name)")
+      .eq("appointment_id", id)
+      .order("created_at"),
   ]);
   if (!appointment) return null;
   const actorIds = [...new Set((events ?? []).map((e) => e.actor).filter((a): a is string => Boolean(a)))];
@@ -100,6 +109,15 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
   return {
     status: appointment.status,
     notes: appointment.notes,
+    totalCents: appointment.total_cents,
+    discountCents: appointment.discount_cents,
+    refundedAt: appointment.refunded_at,
+    items: (items ?? []).map((i) => ({
+      id: i.id,
+      serviceName: i.services?.name ?? "",
+      unitPriceCents: i.unit_price_cents,
+      quantity: i.quantity,
+    })),
     events: (events ?? []).map((e) => ({
       event: e.event,
       at: e.created_at,
@@ -110,7 +128,7 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
 }
 
 async function runTransition(
-  rpc: "cancel_appointment" | "mark_no_show" | "start_appointment" | "complete_appointment",
+  rpc: "cancel_appointment" | "mark_no_show" | "start_appointment" | "complete_appointment" | "revert_appointment_start",
   id: string,
   fallback: string,
   extra: Record<string, string> = {},
@@ -139,6 +157,34 @@ export async function startAppointment(id: string): Promise<ActionResult> {
 
 export async function completeAppointment(id: string): Promise<ActionResult> {
   return runTransition("complete_appointment", id, "Não foi possível concluir o atendimento.");
+}
+
+export async function revertAppointmentStart(id: string): Promise<ActionResult> {
+  return runTransition("revert_appointment_start", id, "Não foi possível desfazer o início.");
+}
+
+export async function addAppointmentItem(appointmentId: string, serviceId: string): Promise<ActionResult> {
+  await requireRole();
+  if (!uuid.safeParse(appointmentId).success || !uuid.safeParse(serviceId).success) {
+    return { ok: false, error: "Escolha um serviço." };
+  }
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("add_appointment_item", { p_appointment_id: appointmentId, p_service_id: serviceId });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível adicionar o serviço.") };
+  revalidatePath("/agenda");
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
+export async function removeAppointmentItem(itemId: string): Promise<ActionResult> {
+  await requireRole();
+  if (!uuid.safeParse(itemId).success) return { ok: false, error: "Serviço inválido." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("remove_appointment_item", { p_item_id: itemId });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível remover o serviço.") };
+  revalidatePath("/agenda");
+  revalidatePath("/caixa");
+  return { ok: true };
 }
 
 export async function rescheduleAppointment(

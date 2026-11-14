@@ -16,4 +16,10 @@ export const APPOINTMENT_EVENT_LABELS: Record<string, string> = {
   called: "Chamado da fila",
   started: "Iniciado",
   completed: "Concluído",
+  reverted: "Início desfeito",
+  item_added: "Serviço adicionado",
+  item_removed: "Serviço removido",
+  paid: "Pago",
+  pix_confirmed: "Pix confirmado",
+  refunded: "Estornado",
 };

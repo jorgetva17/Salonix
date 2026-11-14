@@ -61,9 +61,8 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
         .order("starts_at"),
       supabase.from("professional_schedules").select("professional_id, weekday, starts_at, ends_at").in("professional_id", ids),
       supabase.from("schedule_blocks").select("professional_id, starts_at, ends_at").in("professional_id", ids).lt("starts_at", to).gt("ends_at", from),
-      canManage
-        ? supabase.from("services").select("id, name, duration_minutes, price_cents").eq("salon_id", salon.id).eq("active", true).order("name")
-        : Promise.resolve({ data: [], error: null }),
+      // Todos os perfis: o profissional também adiciona serviço no próprio atendimento.
+      supabase.from("services").select("id, name, duration_minutes, price_cents").eq("salon_id", salon.id).eq("active", true).order("name"),
     ]);
   if (e1 || e2 || e3 || e4) throw e1 ?? e2 ?? e3 ?? e4;
 
@@ -198,6 +197,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
         canManage={canManage}
         myProfessionalId={myProfessionalId ?? null}
         professionals={professionals}
+        services={services}
       >
         {body}
       </AppointmentSheetProvider>

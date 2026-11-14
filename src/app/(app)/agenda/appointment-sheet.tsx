@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useTransition, type ReactNode } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,9 +15,12 @@ import { cn } from "@/lib/utils";
 import {
   cancelAppointment,
   completeAppointment,
+  addAppointmentItem,
   getAppointmentDetails,
   markNoShow,
+  removeAppointmentItem,
   rescheduleAppointment,
+  revertAppointmentStart,
   startAppointment,
   type AppointmentDetails,
 } from "./actions";
@@ -30,6 +33,7 @@ type SheetContext = {
   canManage: boolean;
   myProfessionalId: string | null;
   professionals: ProfessionalOption[];
+  services: { id: string; name: string; price_cents: number }[];
 };
 
 const OpenContext = createContext<(a: AgendaAppointment) => void>(() => {});
@@ -63,7 +67,7 @@ function AppointmentDetail({
   onClose: () => void;
 }) {
   const [details, setDetails] = useState<AppointmentDetails | null>(null);
-  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show">("view");
+  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show" | "revert">("view");
   const [pending, startTransition] = useTransition();
   const professional = ctx.professionals.find((p) => p.id === a.professionalId);
   const isOwn = ctx.myProfessionalId !== null && ctx.myProfessionalId === a.professionalId;
@@ -74,6 +78,9 @@ function AppointmentDetail({
   useEffect(() => {
     startTransition(async () => setDetails(await getAppointmentDetails(a.id)));
   }, [a.id]);
+  const reload = () => startTransition(async () => setDetails(await getAppointmentDetails(a.id)));
+  // Em curso: quem pode atender ajusta; aguardando pagamento: só a recepção/admin.
+  const canAdjust = (status === "in_progress" && canAct) || (status === "awaiting_payment" && ctx.canManage);
 
   const run = (fn: () => Promise<ActionResult>, success: string) =>
     startTransition(async () => {
@@ -98,10 +105,14 @@ function AppointmentDetail({
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted-foreground">Status</dt>
         <dd data-testid="appointment-status">{APPOINTMENT_STATUS_LABELS[status]}</dd>
-        <dt className="text-muted-foreground">Serviços</dt>
-        <dd>{a.services.join(" + ")}</dd>
+        {!canAdjust && (
+          <>
+            <dt className="text-muted-foreground">Serviços</dt>
+            <dd>{details ? details.items.map((i) => i.serviceName).join(" + ") : a.services.join(" + ")}</dd>
+          </>
+        )}
         <dt className="text-muted-foreground">Total</dt>
-        <dd>{formatBRL(a.totalCents)}</dd>
+        <dd data-testid="appointment-total">{formatBRL(details?.totalCents ?? a.totalCents)}</dd>
         {a.customerPhone && (
           <>
             <dt className="text-muted-foreground">WhatsApp</dt>
@@ -116,6 +127,10 @@ function AppointmentDetail({
         )}
       </dl>
 
+      {canAdjust && details && mode === "view" && (
+        <ItemsEditor details={details} appointmentId={a.id} services={ctx.services} onChanged={reload} />
+      )}
+
       {mode === "view" && details && (
         <div className="flex flex-wrap gap-2">
           {status === "scheduled" && canAct && (
@@ -126,6 +141,11 @@ function AppointmentDetail({
           {status === "in_progress" && canAct && (
             <Button className="h-11" disabled={pending} onClick={() => run(() => completeAppointment(a.id), "Atendimento concluído")}>
               Concluir
+            </Button>
+          )}
+          {status === "in_progress" && ctx.canManage && (
+            <Button variant="outline" className="h-11" onClick={() => setMode("revert")}>
+              Desfazer início
             </Button>
           )}
           {status === "scheduled" && ctx.canManage && (
@@ -167,6 +187,17 @@ function AppointmentDetail({
         <RescheduleForm appointment={a} ctx={ctx} onCancel={() => setMode("view")} onDone={onClose} />
       )}
 
+      {mode === "revert" && (
+        <ConfirmBox
+          message={a.kind === "walk_in" ? `Devolver ${a.customerName} para a fila?` : `Voltar ${a.customerName} para agendado?`}
+          withReason={false}
+          confirmLabel="Desfazer início"
+          pending={pending}
+          onBack={() => setMode("view")}
+          onConfirm={() => run(() => revertAppointmentStart(a.id), "Início desfeito")}
+        />
+      )}
+
       {(mode === "cancel" || mode === "no_show") && (
         <ConfirmBox
           message={mode === "cancel" ? `Cancelar o atendimento de ${a.customerName}?` : `Marcar que ${a.customerName} faltou?`}
@@ -202,6 +233,81 @@ function AppointmentDetail({
         )}
       </section>
     </div>
+  );
+}
+
+function ItemsEditor({
+  details,
+  appointmentId,
+  services,
+  onChanged,
+}: {
+  details: AppointmentDetails;
+  appointmentId: string;
+  services: SheetContext["services"];
+  onChanged: () => void;
+}) {
+  const [serviceId, setServiceId] = useState("");
+  const [pending, startTransition] = useTransition();
+  const act = (fn: () => Promise<ActionResult>) =>
+    startTransition(async () => {
+      const result = await fn();
+      if (result.ok) {
+        setServiceId("");
+        onChanged();
+      } else {
+        toast.error(result.error);
+      }
+    });
+
+  return (
+    <section aria-label="Serviços do atendimento" className="flex flex-col gap-2">
+      <h3 className="text-sm font-semibold">Serviços</h3>
+      <ul className="divide-y rounded-lg border" data-testid="appointment-items">
+        {details.items.map((item) => (
+          <li key={item.id} className="flex min-h-11 items-center gap-2 px-3">
+            <span className="flex-1 truncate">{item.serviceName}</span>
+            <span className="text-sm tabular-nums">{formatBRL(item.unitPriceCents * item.quantity)}</span>
+            {details.items.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-11"
+                aria-label={`Remover ${item.serviceName}`}
+                disabled={pending}
+                onClick={() => act(() => removeAppointmentItem(item.id))}
+              >
+                <X aria-hidden />
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="flex gap-2">
+        <select
+          aria-label="Serviço para adicionar"
+          value={serviceId}
+          onChange={(e) => setServiceId(e.target.value)}
+          className={cn(selectClass, "flex-1")}
+        >
+          <option value="">Adicionar serviço…</option>
+          {services.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} · {formatBRL(s.price_cents)}
+            </option>
+          ))}
+        </select>
+        <Button
+          variant="outline"
+          className="h-11"
+          disabled={!serviceId || pending}
+          onClick={() => act(() => addAppointmentItem(appointmentId, serviceId))}
+        >
+          {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+          Adicionar
+        </Button>
+      </div>
+    </section>
   );
 }
 
