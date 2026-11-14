@@ -23,7 +23,39 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "feature_flags": {
+            "commission_rates": {
+                  Row: {
+                    "created_at": string,"id": string,"percent": number,"professional_id": string,"salon_id": string,"service_id": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"percent": number,"professional_id": string,"salon_id": string,"service_id"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"percent"?: number,"professional_id"?: string,"salon_id"?: string,"service_id"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "commission_rates_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "commission_rates_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "commission_rates_service_id_salon_id_fkey"
+      columns: ["service_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id","salon_id"]
+    }
+                  ]
+                },"feature_flags": {
                   Row: {
                     "card_reconciliation": boolean,"pix_webhook": boolean,"salon_id": string,"updated_at": string
                   }
@@ -39,6 +71,26 @@ export type Database = {
       foreignKeyName: "feature_flags_salon_id_fkey"
       columns: ["salon_id"]
 isOneToOne: true
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"professionals": {
+                  Row: {
+                    "active": boolean,"color": string,"created_at": string,"id": string,"name": string,"salon_id": string,"updated_at": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"color": string,"created_at"?: string,"id"?: string,"name": string,"salon_id": string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "active"?: boolean,"color"?: string,"created_at"?: string,"id"?: string,"name"?: string,"salon_id"?: string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "professionals_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
       referencedRelation: "salons"
       referencedColumns: ["id"]
     }
@@ -153,6 +205,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"commission_percent_for":
+{ Args: { "p_professional_id": string,"p_service_id": string }; Returns: number
+                           },
 "create_salon":
 { Args: { "p_name": string,"p_phone"?: string }; Returns: {
               "created_at": string,
@@ -183,11 +238,31 @@ isOneToOne: false
 "is_salon_member":
 { Args: { "p_salon_id": string }; Returns: boolean
                            },
+"link_professional_user":
+{ Args: { "p_professional_id": string,"p_user_id": string }; Returns: undefined
+                           },
 "my_pending_invites":
 { Args: Record<PropertyKey, never>; Returns: {
               "created_at": string,"id": string,"role": Database["public"]['Enums']["salon_role"],"salon_id": string,"salon_name": string
             }[]
                            },
+"save_professional":
+{ Args: { "p_active"?: boolean,"p_color": string,"p_commission_percent": number,"p_id"?: string,"p_name": string,"p_salon_id": string }; Returns: {
+              "active": boolean,
+"color": string,
+"created_at": string,
+"id": string,
+"name": string,
+"salon_id": string,
+"updated_at": string,
+"user_id": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "professionals"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "shares_salon_with":
 { Args: { "p_user_id": string }; Returns: boolean
                            },
