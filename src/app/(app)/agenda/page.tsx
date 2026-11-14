@@ -11,6 +11,8 @@ import { DayGrid, WeekList, type AgendaAppointment, type AgendaColumn } from "./
 import { AppointmentSheetProvider } from "./appointment-sheet";
 import { ACTIVE_STATUSES } from "./data";
 import { NewAppointmentButton } from "./new-appointment";
+import { AgendaTabs } from "./tabs";
+import { WalkInButton } from "./walk-in";
 
 export const metadata = { title: "Agenda · Salonix" };
 
@@ -127,18 +129,24 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 pb-20 md:pb-0">
       <RealtimeRefresh salonId={salon.id} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Agenda</h1>
-        {canManage && (
-          <NewAppointmentButton
-            services={services}
-            professionals={professionals}
-            defaultDate={date < today ? today : date}
-            defaultProfessionalId={selectedId}
-          />
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <AgendaTabs current="agenda" />
+          {canManage && (
+            <>
+              <WalkInButton services={services} professionals={professionals} />
+              <NewAppointmentButton
+                services={services}
+                professionals={professionals}
+                defaultDate={date < today ? today : date}
+                defaultProfessionalId={selectedId}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

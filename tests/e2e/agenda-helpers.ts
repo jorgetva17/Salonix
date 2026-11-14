@@ -10,8 +10,9 @@ export function dayInSaoPaulo(offsetDays: number): string {
 }
 
 /** Salão novo com serviço "Corte" (30 min) e a profissional "Rafa" trabalhando todos os dias 09:00–18:00. */
-export async function setupSalonWithAgenda(page: Page, label: string) {
-  await signUpSalon(page, { email: uniqueEmail(label), salonName: `Salão ${label}`, fullName: "Dona Ana" });
+export async function setupSalonWithAgenda(page: Page, label: string): Promise<string> {
+  const email = uniqueEmail(label);
+  await signUpSalon(page, { email, salonName: `Salão ${label}`, fullName: "Dona Ana" });
 
   await page.goto("/servicos");
   await page.getByRole("button", { name: "Novo serviço" }).click();
@@ -35,6 +36,7 @@ export async function setupSalonWithAgenda(page: Page, label: string) {
   }
   await page.getByRole("button", { name: "Salvar jornada" }).click();
   await expect(page.getByText("Jornada salva")).toBeVisible();
+  return email;
 }
 
 export async function bookTomorrow(page: Page, customer: string, time: string, phone = "") {

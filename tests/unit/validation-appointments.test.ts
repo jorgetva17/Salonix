@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { firstErrors } from "@/lib/validation/auth";
-import { appointmentSchema } from "@/lib/validation/appointments";
+import { appointmentSchema, walkInSchema } from "@/lib/validation/appointments";
 
 const base = {
   customerId: "11111111-1111-4111-8111-111111111111",
@@ -24,5 +24,17 @@ describe("appointmentSchema", () => {
   });
   it("cliente obrigatório", () => {
     expect(firstErrors(appointmentSchema.safeParse({ ...base, customerId: "" })).customerId).toBe("Escolha o cliente");
+  });
+});
+
+describe("walkInSchema", () => {
+  it("profissional vazio vira qualquer profissional", () => {
+    const result = walkInSchema.safeParse({ customerId: base.customerId, serviceIds: base.serviceIds, professionalId: "" });
+    expect(result.success && result.data.professionalId).toBeNull();
+  });
+  it("exige serviço", () => {
+    expect(firstErrors(walkInSchema.safeParse({ customerId: base.customerId, serviceIds: [] })).serviceIds).toBe(
+      "Escolha pelo menos um serviço",
+    );
   });
 });

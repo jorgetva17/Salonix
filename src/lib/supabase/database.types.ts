@@ -376,6 +376,31 @@ isOneToOne: false
 "assert_slot_available":
 { Args: { "p_ends_at": string,"p_professional_id": string,"p_starts_at": string,"p_timezone": string }; Returns: undefined
                            },
+"call_next_walk_in":
+{ Args: { "p_professional_id": string,"p_salon_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "can_act_on_appointment":
 { Args: { "p_professional_id": string,"p_salon_id": string }; Returns: boolean
                            },
@@ -502,6 +527,31 @@ isOneToOne: false
 "decline_invite":
 { Args: { "p_invite_id": string }; Returns: undefined
                            },
+"enqueue_walk_in":
+{ Args: { "p_customer_id": string,"p_professional_id"?: string,"p_salon_id": string,"p_service_ids": (string)[] }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "has_salon_role":
 { Args: { "p_roles": (Database["public"]['Enums']["salon_role"])[],"p_salon_id": string }; Returns: boolean
                            },

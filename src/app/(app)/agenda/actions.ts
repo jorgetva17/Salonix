@@ -8,7 +8,7 @@ import { availableSlots } from "@/lib/agenda/slots";
 import { todayIn, toLocalMinutes } from "@/lib/agenda/time";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
-import { appointmentSchema } from "@/lib/validation/appointments";
+import { appointmentSchema, walkInSchema } from "@/lib/validation/appointments";
 import { firstErrors } from "@/lib/validation/auth";
 import { loadProfessionalDay } from "./data";
 
@@ -111,6 +111,7 @@ async function runTransition(
   const { error } = await supabase.rpc(rpc, { p_appointment_id: id, ...extra });
   if (error) return { ok: false, error: rpcError(error.message, fallback) };
   revalidatePath("/agenda");
+  revalidatePath("/agenda/fila");
   return { ok: true };
 }
 
@@ -150,4 +151,37 @@ export async function rescheduleAppointment(
   if (error) return { ok: false, error: rpcError(error.message, "Não foi possível reagendar.") };
   revalidatePath("/agenda");
   return { ok: true };
+}
+
+export async function enqueueWalkIn(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { salon } = await requireRole(["admin", "reception"]);
+  const parsed = walkInSchema.safeParse({
+    customerId: formData.get("customerId"),
+    serviceIds: formData.getAll("serviceIds"),
+    professionalId: formData.get("professionalId") ?? "",
+  });
+  if (!parsed.success) {
+    return { ok: false, error: "Revise os campos destacados.", fieldErrors: firstErrors(parsed) };
+  }
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("enqueue_walk_in", {
+    p_salon_id: salon.id,
+    p_customer_id: parsed.data.customerId,
+    p_service_ids: parsed.data.serviceIds,
+    p_professional_id: parsed.data.professionalId ?? undefined,
+  });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível colocar na fila.") };
+  revalidatePath("/agenda/fila");
+  return { ok: true, message: "Cliente na fila." };
+}
+
+export async function callNextWalkIn(professionalId: string): Promise<ActionResult<{ customerName: string }>> {
+  const { salon } = await requireRole();
+  if (!uuid.safeParse(professionalId).success) return { ok: false, error: "Profissional inválido." };
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.rpc("call_next_walk_in", { p_salon_id: salon.id, p_professional_id: professionalId });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível chamar o próximo.") };
+  const { data: customer } = await supabase.from("customers").select("name").eq("id", data.customer_id).maybeSingle();
+  revalidatePath("/agenda/fila");
+  return { ok: true, data: { customerName: customer?.name ?? "" } };
 }
