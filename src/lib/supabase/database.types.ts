@@ -494,6 +494,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"allocate_discount":
+{ Args: { "p_amounts": (number)[],"p_discount": number }; Returns: (number)[]
+                           },
 "assert_slot_available":
 { Args: { "p_ends_at": string,"p_professional_id": string,"p_starts_at": string,"p_timezone": string }; Returns: undefined
                            },
@@ -605,6 +608,31 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"confirm_pix":
+{ Args: { "p_transaction_id": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -821,8 +849,37 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"open_cash_session_id":
+{ Args: { "p_salon_id": string }; Returns: string
+                           },
 "recalc_appointment_total":
 { Args: { "p_appointment_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"receive_payment":
+{ Args: { "p_appointment_id": string,"p_discount_cents"?: number,"p_payments": Json }; Returns: {
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
@@ -925,6 +982,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"salon_month":
+{ Args: { "p_salon_id": string }; Returns: string
+                           },
 "save_professional":
 { Args: { "p_active"?: boolean,"p_color": string,"p_commission_percent": number,"p_id"?: string,"p_name": string,"p_salon_id": string }; Returns: {
               "active": boolean,

@@ -84,6 +84,8 @@ export type AppointmentDetails = {
   discountCents: number;
   refundedAt: string | null;
   items: { id: string; serviceName: string; unitPriceCents: number; quantity: number }[];
+  /** Entradas do recebimento (vazio para quem não lê transações, como o profissional). */
+  payments: { method: string | null; amountCents: number; status: string }[];
   events: { event: string; at: string; actorName: string | null; reason: string | null }[];
 };
 
@@ -91,13 +93,19 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
   await requireRole();
   if (!uuid.safeParse(id).success) return null;
   const supabase = await createServerClient();
-  const [{ data: appointment }, { data: events }, { data: items }] = await Promise.all([
+  const [{ data: appointment }, { data: events }, { data: items }, { data: payments }] = await Promise.all([
     supabase.from("appointments").select("status, notes, total_cents, discount_cents, refunded_at").eq("id", id).maybeSingle(),
     supabase.from("appointment_events").select("event, actor, data, created_at").eq("appointment_id", id).order("created_at"),
     supabase
       .from("appointment_items")
       .select("id, unit_price_cents, quantity, services(name)")
       .eq("appointment_id", id)
+      .order("created_at"),
+    supabase
+      .from("transactions")
+      .select("method, amount_cents, status")
+      .eq("appointment_id", id)
+      .eq("type", "income")
       .order("created_at"),
   ]);
   if (!appointment) return null;
@@ -118,6 +126,7 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
       unitPriceCents: i.unit_price_cents,
       quantity: i.quantity,
     })),
+    payments: (payments ?? []).map((t) => ({ method: t.method, amountCents: t.amount_cents, status: t.status })),
     events: (events ?? []).map((e) => ({
       event: e.event,
       at: e.created_at,

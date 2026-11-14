@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { FormState } from "@/lib/action-result";
+import { z } from "zod";
+import type { ActionResult, FormState } from "@/lib/action-result";
 import { rpcError } from "@/lib/agenda/rpc-errors";
 import { formatBRL } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { firstErrors } from "@/lib/validation/auth";
-import { closeCashSchema, openCashSchema } from "@/lib/validation/cash";
+import { closeCashSchema, openCashSchema, paymentSchema } from "@/lib/validation/cash";
 
 export async function openCashSession(_prev: FormState, formData: FormData): Promise<FormState> {
   const { salon } = await requireRole(["admin", "reception"]);
@@ -42,4 +43,35 @@ export async function closeCashSession(_prev: FormState, formData: FormData): Pr
   if (error) return { ok: false, error: rpcError(error.message, "Não foi possível fechar o caixa.") };
   revalidatePath("/caixa");
   return { ok: true, message: `Caixa fechado. Diferença: ${formatBRL(data.difference_cents ?? 0)}.` };
+}
+
+export async function receivePayment(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(["admin", "reception"]);
+  const parsed = paymentSchema.safeParse({
+    appointmentId: formData.get("appointmentId") ?? "",
+    discount: formData.get("discount") ?? "",
+    payments: formData.get("payments") ?? "[]",
+  });
+  if (!parsed.success) return { ok: false, error: "Revise os valores do pagamento.", fieldErrors: firstErrors(parsed) };
+  const { appointmentId, discountCents, payments } = parsed.data;
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.rpc("receive_payment", {
+    p_appointment_id: appointmentId,
+    p_payments: payments.map((p) => ({ method: p.method, amount_cents: p.amountCents })),
+    p_discount_cents: discountCents,
+  });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível receber.") };
+  revalidatePath("/caixa");
+  revalidatePath("/agenda");
+  return { ok: true, message: `Recebido ${formatBRL(data.total_cents - data.discount_cents)}.` };
+}
+
+export async function confirmPix(transactionId: string): Promise<ActionResult> {
+  await requireRole(["admin", "reception"]);
+  if (!z.uuid().safeParse(transactionId).success) return { ok: false, error: "Pix inválido." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("confirm_pix", { p_transaction_id: transactionId });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível confirmar o Pix.") };
+  revalidatePath("/caixa");
+  return { ok: true };
 }

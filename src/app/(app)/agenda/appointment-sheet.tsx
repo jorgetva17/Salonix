@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { APPOINTMENT_EVENT_LABELS, APPOINTMENT_STATUS_LABELS } from "@/lib/agenda/status";
 import { whatsappReminderUrl } from "@/lib/agenda/whatsapp";
+import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "@/lib/cash/methods";
 import type { ActionResult } from "@/lib/action-result";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
@@ -24,6 +25,7 @@ import {
   startAppointment,
   type AppointmentDetails,
 } from "./actions";
+import { PaymentForm } from "../caixa/payment-dialog";
 import type { AgendaAppointment } from "./agenda-client";
 import { selectClass, SlotPicker, type ProfessionalOption } from "./new-appointment";
 
@@ -67,7 +69,7 @@ function AppointmentDetail({
   onClose: () => void;
 }) {
   const [details, setDetails] = useState<AppointmentDetails | null>(null);
-  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show" | "revert">("view");
+  const [mode, setMode] = useState<"view" | "reschedule" | "cancel" | "no_show" | "revert" | "pay">("view");
   const [pending, startTransition] = useTransition();
   const professional = ctx.professionals.find((p) => p.id === a.professionalId);
   const isOwn = ctx.myProfessionalId !== null && ctx.myProfessionalId === a.professionalId;
@@ -113,6 +115,26 @@ function AppointmentDetail({
         )}
         <dt className="text-muted-foreground">Total</dt>
         <dd data-testid="appointment-total">{formatBRL(details?.totalCents ?? a.totalCents)}</dd>
+        {details && details.discountCents > 0 && (
+          <>
+            <dt className="text-muted-foreground">Desconto</dt>
+            <dd>{formatBRL(details.discountCents)}</dd>
+          </>
+        )}
+        {details && details.payments.length > 0 && (
+          <>
+            <dt className="text-muted-foreground">Pagamento</dt>
+            <dd data-testid="appointment-payments">
+              {details.payments
+                .map(
+                  (p) =>
+                    `${p.method ? PAYMENT_METHOD_LABELS[p.method as PaymentMethod] : ""} ${formatBRL(p.amountCents)}` +
+                    (p.status === "pending" ? " (a confirmar)" : p.status === "reversed" ? " (estornado)" : ""),
+                )
+                .join(" + ")}
+            </dd>
+          </>
+        )}
         {a.customerPhone && (
           <>
             <dt className="text-muted-foreground">WhatsApp</dt>
@@ -141,6 +163,11 @@ function AppointmentDetail({
           {status === "in_progress" && canAct && (
             <Button className="h-11" disabled={pending} onClick={() => run(() => completeAppointment(a.id), "Atendimento concluído")}>
               Concluir
+            </Button>
+          )}
+          {status === "awaiting_payment" && ctx.canManage && (
+            <Button className="h-11" onClick={() => setMode("pay")}>
+              Receber
             </Button>
           )}
           {status === "in_progress" && ctx.canManage && (
@@ -185,6 +212,15 @@ function AppointmentDetail({
 
       {mode === "reschedule" && (
         <RescheduleForm appointment={a} ctx={ctx} onCancel={() => setMode("view")} onDone={onClose} />
+      )}
+
+      {mode === "pay" && details && (
+        <div className="flex flex-col gap-2 rounded-lg border p-3">
+          <PaymentForm appointment={{ id: a.id, customerName: a.customerName, totalCents: details.totalCents }} onDone={onClose} />
+          <Button variant="outline" className="h-11" onClick={() => setMode("view")}>
+            Voltar
+          </Button>
+        </div>
       )}
 
       {mode === "revert" && (

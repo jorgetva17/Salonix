@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActionForm } from "@/components/forms/use-action-form";
@@ -12,7 +12,7 @@ import { closingDifference } from "@/lib/cash/summary";
 import { formatBRL } from "@/lib/format";
 import { parseBRLToCents } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { closeCashSession, openCashSession } from "./actions";
+import { closeCashSession, confirmPix, openCashSession } from "./actions";
 
 export function OpenCashForm() {
   const [state, onSubmit, pending] = useActionForm(openCashSession, null);
@@ -110,5 +110,26 @@ export function CloseCashForm({ expected }: { expected: Record<PaymentMethod, nu
         )}
       </FieldGroup>
     </form>
+  );
+}
+
+export function ConfirmPixButton({ transactionId }: { transactionId: string }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <Button
+      variant="outline"
+      className="h-11"
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          const result = await confirmPix(transactionId);
+          if (result.ok) toast.success("Pix confirmado");
+          else toast.error(result.error);
+        })
+      }
+    >
+      {pending && <Loader2 className="animate-spin" aria-hidden />}
+      Confirmar Pix
+    </Button>
   );
 }
