@@ -70,6 +70,8 @@ export function CustomerPicker({ name, error }: { name: string; error?: string }
   return (
     <div className="flex flex-col gap-2">
       <input type="hidden" name={name} value="" />
+      {/* Sem escolher da lista, o nome digitado vira cadastro novo ao enviar o formulário. */}
+      <input type="hidden" name="customerName" value={query} />
       <Input
         id={id}
         aria-label="Cliente"
@@ -105,7 +107,7 @@ export function CustomerPicker({ name, error }: { name: string; error?: string }
               onClick={() => setCreating(true)}
             >
               <UserPlus className="size-4" aria-hidden />
-              Cadastrar “{query.trim()}”
+              Cadastrar “{query.trim()}” com WhatsApp
             </button>
           </li>
         </ul>
@@ -134,6 +136,9 @@ export function CustomerPicker({ name, error }: { name: string; error?: string }
             Cadastrar cliente
           </Button>
         </div>
+      )}
+      {query.trim().length >= 2 && !creating && (
+        <p className="text-sm text-muted-foreground">Não está na lista? Basta continuar: o cliente é cadastrado com este nome.</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

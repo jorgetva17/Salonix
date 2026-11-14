@@ -44,7 +44,7 @@ export async function bookTomorrow(page: Page, customer: string, time: string, p
   await page.getByRole("button", { name: "Agendar" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Cliente", { exact: true }).fill(customer);
-  await dialog.getByRole("button", { name: `Cadastrar “${customer}”` }).click();
+  await dialog.getByRole("button", { name: `Cadastrar “${customer}” com WhatsApp` }).click();
   if (phone) await dialog.getByLabel("WhatsApp do novo cliente (opcional)").fill(phone);
   await dialog.getByRole("button", { name: "Cadastrar cliente" }).click();
   await expect(dialog.getByRole("button", { name: "Trocar cliente" })).toBeVisible();

@@ -10,6 +10,7 @@ import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { appointmentSchema, walkInSchema } from "@/lib/validation/appointments";
 import { firstErrors } from "@/lib/validation/auth";
+import { createTypedCustomer, readCustomerChoice } from "../clientes/ensure-customer";
 import { loadProfessionalDay } from "./data";
 
 const uuid = z.uuid();
@@ -42,20 +43,27 @@ export async function getFreeSlots(
 
 export async function createAppointment(_prev: FormState, formData: FormData): Promise<FormState> {
   const { salon } = await requireRole(["admin", "reception"]);
+  const customer = readCustomerChoice(formData);
   const parsed = appointmentSchema.safeParse({
-    customerId: formData.get("customerId"),
+    customerId: "error" in customer ? "" : customer.customerId,
     professionalId: formData.get("professionalId"),
     serviceIds: formData.getAll("serviceIds"),
     date: formData.get("date"),
     time: formData.get("time"),
     notes: formData.get("notes") || undefined,
   });
-  if (!parsed.success) {
-    return { ok: false, error: "Revise os campos destacados.", fieldErrors: firstErrors(parsed) };
+  if (!parsed.success || "error" in customer) {
+    const fieldErrors = parsed.success ? {} : firstErrors(parsed);
+    if ("error" in customer) fieldErrors.customerId = customer.error;
+    return { ok: false, error: "Revise os campos destacados.", fieldErrors };
   }
-  const { customerId, professionalId, serviceIds, date: day, time, notes } = parsed.data;
+  const { professionalId, serviceIds, date: day, time, notes } = parsed.data;
 
   const supabase = await createServerClient();
+  const customerId = customer.pendingName
+    ? await createTypedCustomer(supabase, salon.id, customer.pendingName)
+    : parsed.data.customerId;
+  if (!customerId) return { ok: false, error: "Não foi possível cadastrar o cliente." };
   const { error } = await supabase.rpc("create_appointment", {
     p_salon_id: salon.id,
     p_customer_id: customerId,
@@ -157,18 +165,25 @@ export async function rescheduleAppointment(
 
 export async function enqueueWalkIn(_prev: FormState, formData: FormData): Promise<FormState> {
   const { salon } = await requireRole(["admin", "reception"]);
+  const customer = readCustomerChoice(formData);
   const parsed = walkInSchema.safeParse({
-    customerId: formData.get("customerId"),
+    customerId: "error" in customer ? "" : customer.customerId,
     serviceIds: formData.getAll("serviceIds"),
     professionalId: formData.get("professionalId") ?? "",
   });
-  if (!parsed.success) {
-    return { ok: false, error: "Revise os campos destacados.", fieldErrors: firstErrors(parsed) };
+  if (!parsed.success || "error" in customer) {
+    const fieldErrors = parsed.success ? {} : firstErrors(parsed);
+    if ("error" in customer) fieldErrors.customerId = customer.error;
+    return { ok: false, error: "Revise os campos destacados.", fieldErrors };
   }
   const supabase = await createServerClient();
+  const customerId = customer.pendingName
+    ? await createTypedCustomer(supabase, salon.id, customer.pendingName)
+    : parsed.data.customerId;
+  if (!customerId) return { ok: false, error: "Não foi possível cadastrar o cliente." };
   const { error } = await supabase.rpc("enqueue_walk_in", {
     p_salon_id: salon.id,
-    p_customer_id: parsed.data.customerId,
+    p_customer_id: customerId,
     p_service_ids: parsed.data.serviceIds,
     p_professional_id: parsed.data.professionalId ?? undefined,
   });

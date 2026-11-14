@@ -3,8 +3,8 @@ import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
 import { EmptyState } from "@/components/states/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { estimateWaits, type Server } from "@/lib/agenda/queue";
-import { timeToMinutes, todayIn, toLocalMinutes, weekdayOf } from "@/lib/agenda/time";
-import { formatTime } from "@/lib/format";
+import { localDayRange, timeToMinutes, todayIn, toLocalMinutes, weekdayOf } from "@/lib/agenda/time";
+import { formatDateTime, formatTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { AgendaTabs } from "../tabs";
@@ -64,8 +64,12 @@ export default async function QueuePage() {
         schedules.some((s) => s.professional_id === p.id && timeToMinutes(s.starts_at) <= nowMinutes && nowMinutes < timeToMinutes(s.ends_at)),
     )
     .map((p) => ({ professionalId: p.id, busyUntil: inProgress.find((a) => a.professional_id === p.id)?.ends_at ?? null }));
+  // A fila é do dia; quem ficou de outro dia aparece à parte só para ser removido.
+  const startOfToday = Date.parse(localDayRange(today, tz).from);
+  const stale = waiting.filter((w) => Date.parse(w.arrived_at!) < startOfToday);
+  const queue = waiting.filter((w) => Date.parse(w.arrived_at!) >= startOfToday);
   const waits = estimateWaits(
-    waiting.map((w) => ({ id: w.id, arrivedAt: w.arrived_at!, durationMinutes: w.duration_minutes, professionalId: w.professional_id })),
+    queue.map((w) => ({ id: w.id, arrivedAt: w.arrived_at!, durationMinutes: w.duration_minutes, professionalId: w.professional_id })),
     servers,
     nowIso,
   );
@@ -88,11 +92,11 @@ export default async function QueuePage() {
           <CardTitle>Aguardando</CardTitle>
         </CardHeader>
         <CardContent>
-          {waiting.length === 0 ? (
+          {queue.length === 0 ? (
             <EmptyState icon={Users} title="Ninguém na fila" description="Use “Cliente na porta” quando alguém chegar sem horário." />
           ) : (
             <ol className="divide-y" data-testid="queue-list">
-              {waiting.map((w, index) => {
+              {queue.map((w, index) => {
                 const wait = waits.get(w.id);
                 const name = w.customers?.name ?? "";
                 return (
@@ -116,6 +120,31 @@ export default async function QueuePage() {
           )}
         </CardContent>
       </Card>
+
+      {canManage && stale.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ficaram de outros dias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-2 text-sm text-muted-foreground">Não são chamados pela fila de hoje. Remova ou marque falta.</p>
+            <ul className="divide-y" data-testid="stale-queue">
+              {stale.map((w) => {
+                const name = w.customers?.name ?? "";
+                return (
+                  <li key={w.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{name}</p>
+                      <p className="text-sm text-muted-foreground">chegou {formatDateTime(w.arrived_at!, tz)}</p>
+                    </div>
+                    <QueueItemActions appointmentId={w.id} customerName={name} />
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
