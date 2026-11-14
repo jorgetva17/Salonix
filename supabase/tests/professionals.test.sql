@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(19);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -78,10 +78,18 @@ select lives_ok(
 insert into public.commission_rates (salon_id, professional_id, service_id, percent) values
   ((select v from ids where k='salon_a'), (select v from ids where k='paulo'), (select v from ids where k='barba'), 50),
   ((select v from ids where k='salon_a'), (select v from ids where k='marcos'), (select v from ids where k='barba'), 55);
+-- commission_percent_for é auxiliar interno (a RPC de recebimento da Fase 4 chama):
+-- ninguém executa pela API, senão a recepção leria as taxas.
+select throws_ok(
+  format($$ select public.commission_percent_for(%L, %L) $$,
+         (select v from ids where k='paulo'), (select v from ids where k='barba')),
+  '42501', null, 'commission_percent_for não é chamável pela API');
+select t.logout();
 select is(public.commission_percent_for((select v from ids where k='paulo'), (select v from ids where k='barba')),
           50.00::numeric, 'sobrescrita por serviço vale');
 select is(public.commission_percent_for((select v from ids where k='paulo'), (select v from ids where k='corte')),
           45.00::numeric, 'sem sobrescrita usa a padrão');
+select t.login((select v from ids where k='ana'));
 
 select throws_ok(
   format($$ insert into public.commission_rates (salon_id, professional_id, service_id, percent) values (%L, %L, %L, 30) $$,
@@ -102,6 +110,10 @@ select throws_ok(
          (select v from ids where k='marcos'), (select v from ids where k='rec')),
   'P0001', null, 'recepção não vincula');
 select is((select count(*)::int from public.commission_rates), 0, 'recepção não lê comissões');
+select throws_ok(
+  format($$ select public.commission_percent_for(%L, %L) $$,
+         (select v from ids where k='paulo'), (select v from ids where k='barba')),
+  '42501', null, 'recepção não obtém 0% silencioso de commission_percent_for');
 select is((select count(*)::int from public.professionals), 2, 'recepção vê os profissionais (agenda)');
 
 -- profissional vinculado vê só as próprias comissões

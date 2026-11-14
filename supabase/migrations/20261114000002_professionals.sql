@@ -144,6 +144,9 @@ end;
 $$;
 
 -- Taxa que vale para o serviço: sobrescrita, senão a padrão, senão 0.
+-- Auxiliar interno: só funções security definer (o recebimento da Fase 4) chamam.
+-- Não é executável pela API: chamada pela recepção, a RLS esconderia as taxas e o
+-- resultado seria 0% em silêncio; liberada como definer, exporia as taxas.
 create or replace function public.commission_percent_for(p_professional_id uuid, p_service_id uuid)
 returns numeric
 language sql
@@ -160,7 +163,6 @@ $$;
 
 revoke execute on function public.save_professional(uuid, text, text, numeric, uuid, boolean) from public, anon;
 revoke execute on function public.link_professional_user(uuid, uuid) from public, anon;
-revoke execute on function public.commission_percent_for(uuid, uuid) from public, anon;
+revoke execute on function public.commission_percent_for(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.save_professional(uuid, text, text, numeric, uuid, boolean) to authenticated;
 grant execute on function public.link_professional_user(uuid, uuid) to authenticated;
-grant execute on function public.commission_percent_for(uuid, uuid) to authenticated;
