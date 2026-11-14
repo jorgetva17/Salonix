@@ -555,6 +555,30 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"cash_session_expected":
+{ Args: { "p_session_id": string }; Returns: Json
+                           },
+"close_cash_session":
+{ Args: { "p_counted": Json,"p_session_id": string }; Returns: {
+              "closed_at": string | null,
+"closed_by": string | null,
+"counted": Json | null,
+"created_at": string,
+"difference_cents": number | null,
+"expected": Json | null,
+"id": string,
+"opened_at": string,
+"opened_by": string | null,
+"opening_cents": number,
+"salon_id": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "cash_sessions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "commission_percent_for":
 { Args: { "p_professional_id": string,"p_service_id": string }; Returns: number
                            },
@@ -776,6 +800,27 @@ isOneToOne: false
 "my_professional_id":
 { Args: { "p_salon_id": string }; Returns: string
                            },
+"open_cash_session":
+{ Args: { "p_opening_cents": number,"p_salon_id": string }; Returns: {
+              "closed_at": string | null,
+"closed_by": string | null,
+"counted": Json | null,
+"created_at": string,
+"difference_cents": number | null,
+"expected": Json | null,
+"id": string,
+"opened_at": string,
+"opened_by": string | null,
+"opening_cents": number,
+"salon_id": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "cash_sessions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "recalc_appointment_total":
 { Args: { "p_appointment_id": string }; Returns: {
               "arrived_at": string | null,
