@@ -17,3 +17,24 @@ test.describe("usuários de demonstração do seed", () => {
     });
   }
 });
+
+test.describe("cadastros de demonstração do seed", () => {
+  test("admin vê serviços e profissionais de demonstração", async ({ page }) => {
+    await signIn(page, "admin@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/servicos");
+    await expect(page.getByTestId("service-row").filter({ hasText: "Corte masculino" })).toContainText(
+      "30 min · R$ 45,00",
+    );
+    await page.goto("/profissionais");
+    await expect(page.getByRole("link", { name: /Paulo Profissional/ })).toContainText("Com acesso ao app");
+    await expect(page.getByRole("link", { name: /Marcos/ })).toContainText("Sem login");
+  });
+
+  test("recepção vê clientes de demonstração", async ({ page }) => {
+    await signIn(page, "recepcao@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/clientes?q=carlos");
+    await expect(page.getByTestId("customer-row").filter({ hasText: "Carlos Cliente" })).toBeVisible();
+  });
+});

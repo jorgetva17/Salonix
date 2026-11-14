@@ -10,7 +10,7 @@ Salonix: multi-tenant management app for barbershops and hair salons (agenda, ca
 
 - Product requirements: `salonix.md`
 - MVP design (data model, flows, permissions, build phases): `docs/superpowers/specs/2026-11-13-salonix-mvp-design.md`
-- Implementation plans per phase: `docs/superpowers/plans/` — Phase 1 (base: auth, onboarding, invites, layout, theme, logo, PWA) is done; agenda/caixa/estoque/financeiro pages are still placeholders.
+- Implementation plans per phase: `docs/superpowers/plans/` — Phase 1 (base: auth, onboarding, invites, layout, theme, logo, PWA) and Phase 2 (cadastros: services, professionals with schedules/blocks/commissions, customers) are done; agenda/caixa/estoque/financeiro pages are still placeholders.
 - Where the spec and the code disagree (e.g. logo storage path), the code and migrations are authoritative.
 
 Stack: Next.js 16 App Router (React 19), TypeScript, Tailwind CSS 4, shadcn/ui on **Base UI** (not Radix), Supabase (Postgres, Auth, Storage) via `@supabase/ssr`, Zod 4, Vitest, pgTAP, Playwright.
@@ -45,7 +45,7 @@ Run `npm run db:reset` before the e2e suite so the demo users exist. Demo salon 
 
 ## Architecture
 
-**Tenancy is enforced in Postgres, not in the app.** Every business table has `salon_id` and RLS, using the `security definer` helpers `is_salon_member(salon_id)` and `has_salon_role(salon_id, roles[])` (both check `salon_members.active`, so deactivation takes effect immediately). `supabase/tests/tenancy.test.sql` fails if any table in `public` lacks RLS. New tables need RLS policies plus pgTAP tests for cross-salon isolation and per-role permissions.
+**Tenancy is enforced in Postgres, not in the app.** Every business table has `salon_id` and RLS, using the `security definer` helpers `is_salon_member(salon_id)` and `has_salon_role(salon_id, roles[])` (both check `salon_members.active`, so deactivation takes effect immediately). `supabase/tests/tenancy.test.sql` fails if any table in `public` lacks RLS. New tables need RLS policies plus pgTAP tests for cross-salon isolation and per-role permissions. Child tables reference parents through composite FKs `(parent_id, salon_id) → parent (id, salon_id)` (parents declare `unique (id, salon_id)`), so a row can never point at another salon's record. Services and professionals are deactivated, never deleted. Commission percentages live in `commission_rates` (null `service_id` = default rate), readable only by admins and the professional themself; `professionals.user_id` can only be changed through the `link_professional_user` RPC (column grants exclude it).
 
 **Membership only comes from RPCs.** There is no insert policy on `salon_members`; a user joins a salon only via `create_salon` (becomes admin) or `accept_invite`. A trigger keeps at least one active admin per salon; deactivating a member revokes their pending invites. Roles are the enum `salon_role`: `admin`, `reception`, `professional`. Critical business rules are meant to live in transactional Postgres functions called via RPC.
 

@@ -69,6 +69,10 @@ Rode `npm run db:reset` antes do E2E para recarregar os usuários de demonstraç
 - Uma pessoa só entra em um salão **criando o salão** (`create_salon`) ou
   **aceitando um convite** (`accept_invite`). Não há inserção direta em `salon_members`.
 - O salão ativo fica no cookie `salonix_salon` (quem trabalha em mais de um salão troca pelo menu).
+- Tabelas filhas usam chave estrangeira composta `(id, salon_id)`, então uma linha nunca aponta
+  para registro de outro salão (ex.: comissão de um serviço de outro salão).
+- Percentuais de comissão ficam em `commission_rates`, legível só pelo admin e pelo próprio
+  profissional; a recepção não vê comissões nem pela API.
 - Logos são convertidas para PNG no servidor e gravadas no bucket `salon-logos`
   apenas pelo servidor; o bucket é público só para leitura.
 
