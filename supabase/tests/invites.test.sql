@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(18);
 
 create schema t;
 create function t.create_user(p_email text, p_confirmed boolean default true) returns uuid language sql as $$
@@ -115,6 +115,20 @@ select is((select count(*)::int from public.my_pending_invites()), 0, 'convite v
 select throws_ok(
   format($$ select public.accept_invite(%L) $$, (select v from ids where k='expired')),
   'P0001', 'Convite não encontrado.', 'convite vencido não pode ser aceito');
+
+-- desativar um membro cancela convites pendentes dele no salão
+select t.logout();
+insert into public.salon_invites (salon_id, email, role)
+values ((select v from ids where k='salon_a'), 'carlos@exemplo.com', 'admin');
+insert into ids select 'reinv', id from public.salon_invites
+ where salon_id = (select v from ids where k='salon_a') and status = 'pending' and email = 'carlos@exemplo.com';
+update public.salon_members set active = false
+ where salon_id = (select v from ids where k='salon_a') and user_id = (select v from ids where k='carlos');
+select is((select status from public.salon_invites where id = (select v from ids where k='reinv')), 'revoked',
+          'convite pendente revogado ao desativar');
+select t.login((select v from ids where k='carlos'));
+select throws_ok(format($$ select public.accept_invite(%L) $$, (select v from ids where k='reinv')),
+                 'P0001', 'Convite não encontrado.', 'desativado não se reativa com convite antigo');
 
 select * from finish();
 rollback;

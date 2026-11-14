@@ -142,3 +142,28 @@ revoke execute on function public.decline_invite(uuid) from public, anon;
 grant execute on function public.my_pending_invites() to authenticated;
 grant execute on function public.accept_invite(uuid) to authenticated;
 grant execute on function public.decline_invite(uuid) to authenticated;
+
+-- Desativar alguém cancela os convites pendentes dessa pessoa no salão, para que
+-- ela não consiga se reativar aceitando um convite antigo.
+create or replace function public.revoke_invites_on_deactivate()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.active and not new.active then
+    update public.salon_invites i
+    set status = 'revoked'
+    from auth.users u
+    where u.id = new.user_id
+      and i.salon_id = new.salon_id
+      and i.status = 'pending'
+      and i.email = lower(u.email);
+  end if;
+  return new;
+end;
+$$;
+
+create trigger salon_members_revoke_invites after update of active on public.salon_members
+  for each row execute function public.revoke_invites_on_deactivate();
