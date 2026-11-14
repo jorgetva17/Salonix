@@ -41,9 +41,9 @@ insert into public.services (salon_id, name, duration_minutes, price_cents) valu
   ((select v from ids where k='salon_a'), 'Corte', 30, 4500),
   ((select v from ids where k='salon_a'), 'Barba', 30, 3500),
   ((select v from ids where k='salon_b'), 'Corte B', 30, 4000);
-insert into ids select 'corte', id from public.services where name = 'Corte';
-insert into ids select 'barba', id from public.services where name = 'Barba';
-insert into ids select 'corte_b', id from public.services where name = 'Corte B';
+insert into ids select 'corte', id from public.services where name = 'Corte' and salon_id = (select v from ids where k='salon_a');
+insert into ids select 'barba', id from public.services where name = 'Barba' and salon_id = (select v from ids where k='salon_a');
+insert into ids select 'corte_b', id from public.services where name = 'Corte B' and salon_id = (select v from ids where k='salon_b');
 
 -- admin cria profissional com comissão padrão
 select t.login((select v from ids where k='ana'));
