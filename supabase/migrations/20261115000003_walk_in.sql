@@ -50,18 +50,21 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_timezone text;
   v_next public.appointments;
   v_appt public.appointments;
 begin
+  -- Permissão primeiro (e "is not true" barra NULL de quem não tem profissional vinculado).
+  if (
+    public.has_salon_role(p_salon_id, '{admin,reception}')
+    or coalesce(public.my_professional_id(p_salon_id) = p_professional_id, false)
+  ) is not true then
+    raise exception 'Sem permissão.';
+  end if;
   if not exists (select 1 from public.professionals where id = p_professional_id and salon_id = p_salon_id and active) then
     raise exception 'Profissional não encontrado.';
   end if;
-  if not (
-    public.has_salon_role(p_salon_id, '{admin,reception}')
-    or public.my_professional_id(p_salon_id) = p_professional_id
-  ) then
-    raise exception 'Sem permissão.';
-  end if;
+  select timezone into v_timezone from public.salons where id = p_salon_id;
   if exists (select 1 from public.appointments where professional_id = p_professional_id and status = 'in_progress') then
     raise exception 'Profissional já está em atendimento.';
   end if;
@@ -69,6 +72,8 @@ begin
   select * into v_next from public.appointments
   where salon_id = p_salon_id and kind = 'walk_in' and status = 'waiting'
     and (professional_id is null or professional_id = p_professional_id)
+    -- A fila é do dia (no fuso do salão): quem ficou de outro dia não volta a ser chamado.
+    and arrived_at >= (date_trunc('day', now() at time zone v_timezone) at time zone v_timezone)
   order by arrived_at, created_at
   limit 1
   for update skip locked;
@@ -76,13 +81,17 @@ begin
     raise exception 'Fila vazia para este profissional.';
   end if;
 
-  update public.appointments
-  set professional_id = p_professional_id,
-      status = 'in_progress',
-      starts_at = now(),
-      ends_at = now() + make_interval(mins => duration_minutes)
-  where id = v_next.id
-  returning * into v_appt;
+  begin
+    update public.appointments
+    set professional_id = p_professional_id,
+        status = 'in_progress',
+        starts_at = now(),
+        ends_at = now() + make_interval(mins => duration_minutes)
+    where id = v_next.id
+    returning * into v_appt;
+  exception when unique_violation then
+    raise exception 'Profissional já está em atendimento.';
+  end;
 
   insert into public.appointment_events (salon_id, appointment_id, event) values (p_salon_id, v_appt.id, 'called');
   return v_appt;

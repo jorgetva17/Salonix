@@ -39,6 +39,8 @@ create table public.appointments (
 
 create index appointments_salon_starts_idx on public.appointments (salon_id, starts_at);
 create index appointments_queue_idx on public.appointments (salon_id, status, arrived_at) where kind = 'walk_in';
+-- Um atendimento em andamento por profissional, mesmo com duas chamadas simultâneas.
+create unique index appointments_one_in_progress on public.appointments (professional_id) where status = 'in_progress';
 
 create trigger appointments_updated_at before update on public.appointments
   for each row execute function public.set_updated_at();

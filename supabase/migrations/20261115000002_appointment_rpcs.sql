@@ -82,8 +82,10 @@ stable
 security definer
 set search_path = ''
 as $$
+  -- coalesce: sem profissional vinculado, my_professional_id é nulo e a comparação
+  -- seria NULL, que um "if not ..." deixaria passar.
   select public.has_salon_role(p_salon_id, '{admin,reception}')
-    or (p_professional_id is not null and p_professional_id = public.my_professional_id(p_salon_id));
+    or coalesce(p_professional_id = public.my_professional_id(p_salon_id), false);
 $$;
 
 -- Carrega e trava o atendimento; erro se não existir.
@@ -229,8 +231,9 @@ declare
   v_old public.appointments := public.lock_appointment(p_appointment_id);
   v_appt public.appointments;
 begin
-  if (p_reception_only and not public.has_salon_role(v_old.salon_id, '{admin,reception}'))
-     or (not p_reception_only and not public.can_act_on_appointment(v_old.salon_id, v_old.professional_id)) then
+  -- "is not true" também barra NULL.
+  if (case when p_reception_only then public.has_salon_role(v_old.salon_id, '{admin,reception}')
+           else public.can_act_on_appointment(v_old.salon_id, v_old.professional_id) end) is not true then
     raise exception 'Sem permissão.';
   end if;
   if not (v_old.status = any (p_from)) then
@@ -243,7 +246,12 @@ begin
     raise exception 'Profissional já está em atendimento.';
   end if;
 
-  update public.appointments set status = p_to where id = p_appointment_id returning * into v_appt;
+  begin
+    update public.appointments set status = p_to where id = p_appointment_id returning * into v_appt;
+  exception when unique_violation then
+    -- Outra chamada simultânea pôs o profissional em atendimento (índice único).
+    raise exception 'Profissional já está em atendimento.';
+  end;
   insert into public.appointment_events (salon_id, appointment_id, event, data)
   values (v_old.salon_id, p_appointment_id, p_event, p_data);
   return v_appt;
