@@ -95,16 +95,20 @@ begin
     raise exception 'Desconto maior que o total.';
   end if;
 
+  if jsonb_typeof(p_payments) is distinct from 'array' then
+    raise exception 'Valor pago não confere com o total.';
+  end if;
   -- Cada linha com forma conhecida e valor inteiro positivo; a soma fecha o total.
-  select coalesce(bool_and(
+  -- coalesce por linha: um campo ausente dá NULL, que o bool_and ignoraria.
+  select coalesce(bool_and(coalesce(
            p->>'method' in ('cash', 'debit', 'credit', 'pix')
            and jsonb_typeof(p->'amount_cents') = 'number'
            and (p->>'amount_cents')::numeric = trunc((p->>'amount_cents')::numeric)
-           and (p->>'amount_cents')::numeric > 0), true),
+           and (p->>'amount_cents')::numeric > 0, false)), true),
          coalesce(sum((p->>'amount_cents')::numeric), 0),
          coalesce(bool_or(p->>'method' = 'pix'), false)
   into v_valid, v_paid, v_has_pix
-  from jsonb_array_elements(case when jsonb_typeof(p_payments) = 'array' then p_payments else '[{}]'::jsonb end) p;
+  from jsonb_array_elements(p_payments) p;
   if not v_valid or v_paid <> v_appt.total_cents - p_discount_cents then
     raise exception 'Valor pago não confere com o total.';
   end if;

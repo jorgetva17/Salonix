@@ -44,6 +44,8 @@ create table public.transactions (
   updated_at timestamptz not null default now(),
   unique (id, salon_id),
   check (status <> 'paid' or paid_at is not null),
+  -- Entrada sempre tem forma de pagamento (contas a pagar da Fase 6 podem nascer sem).
+  check (type <> 'income' or method is not null),
   foreign key (appointment_id, salon_id) references public.appointments (id, salon_id),
   foreign key (cash_session_id, salon_id) references public.cash_sessions (id, salon_id),
   foreign key (reverses_id, salon_id) references public.transactions (id, salon_id)

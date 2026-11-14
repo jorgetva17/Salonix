@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(50);
+select plan(52);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -130,6 +130,10 @@ select throws_ok($$select t.receive('a3', '[]', 9000)$$,
   'Desconto maior que o total.', 'desconto maior que o total');
 select throws_ok($$select t.receive('a3', '[{"method": "boleto", "amount_cents": 8000}]')$$,
   'Valor pago não confere com o total.', 'forma inválida');
+select throws_ok($$select t.receive('a3', '[{"amount_cents": 8000}]')$$,
+  'Valor pago não confere com o total.', 'linha sem forma de pagamento');
+select throws_ok($$select t.receive('a3', '{"method": "cash", "amount_cents": 8000}')$$,
+  'Valor pago não confere com o total.', 'pagamentos fora de uma lista');
 select t.login((select v from ids where k='pro'));
 select throws_ok($$select t.receive('a3', '[{"method": "cash", "amount_cents": 8000}]')$$, 'Sem permissão.', 'profissional não recebe');
 select t.login((select v from ids where k='bia'));
