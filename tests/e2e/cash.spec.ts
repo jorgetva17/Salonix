@@ -80,3 +80,22 @@ test("admin estorna atendimento pago e o dinheiro sai do caixa", async ({ page }
   await page.goto("/caixa");
   await expect(page.getByTestId("expected-cash")).toHaveText("R$ 100,00");
 });
+
+test("histórico de caixas fechados no financeiro", async ({ page }) => {
+  test.slow();
+  await setupSalonWithAgenda(page, "historico");
+  await openCash(page, "100,00");
+  await bookAndFinish(page, "Bruno Teste", "11:00");
+  const dialog = await startReceiving(page, "Bruno Teste");
+  await dialog.getByRole("button", { name: "Receber R$ 40,00" }).click();
+  await expect(dialog).toBeHidden();
+  await closeCash(page, { Dinheiro: "135,00" });
+
+  await page.goto("/financeiro/caixas");
+  const session = page.getByTestId("closed-session").first();
+  await expect(session.getByTestId("session-expected")).toHaveText("R$ 140,00");
+  await expect(session.getByTestId("session-counted")).toHaveText("R$ 135,00");
+  await expect(session.getByTestId("session-difference")).toHaveText("-R$ 5,00");
+  await session.getByText("Ver por forma").click();
+  for (const label of ["Dinheiro", "Débito", "Crédito", "Pix"]) await expect(session).toContainText(label);
+});
