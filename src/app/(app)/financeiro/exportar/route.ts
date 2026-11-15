@@ -3,7 +3,7 @@ import { withDetails } from "@/lib/agenda-data";
 import { DEFAULT_TIMEZONE, formatDateTime, isoToZonedLocal, zonedLocalToIso } from "@/lib/format";
 import { shiftDate } from "@/lib/agenda";
 import { METHOD_LABELS } from "@/lib/payments";
-import { CATEGORY_LABELS, csvMoney, parsePeriod, toCsv } from "@/lib/reports";
+import { CATEGORY_LABELS, csvMoney, csvText, parsePeriod, toCsv } from "@/lib/reports";
 import { getActiveMembership } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
         .sort((a, b) => (paidAt.get(a.id) ?? "").localeCompare(paidAt.get(b.id) ?? ""))
         .map((a) => [
           formatDateTime(paidAt.get(a.id) ?? a.updated_at, tz),
-          a.displayName,
-          a.professional_id ? (proName.get(a.professional_id) ?? "") : "",
-          a.serviceNames || a.items.map((i) => i.description).join(" + "),
+          csvText(a.displayName),
+          a.professional_id ? csvText(proName.get(a.professional_id) ?? "") : "",
+          csvText(a.serviceNames || a.items.map((i) => i.description).join(" + ")),
           csvMoney(a.total_cents),
           csvMoney(a.discount_cents),
           csvMoney(a.total_cents - a.discount_cents),
@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
     csv = toCsv(
       ["Categoria", "Descrição", "Valor (R$)", "Situação", "Vencimento", "Pago em", "Forma de pagamento"],
       [...(paid ?? []), ...(pending ?? [])].map((t) => [
-        CATEGORY_LABELS[t.category] ?? t.category,
-        t.description,
+        csvText(CATEGORY_LABELS[t.category] ?? t.category),
+        csvText(t.description),
         csvMoney(t.amount_cents),
         t.status === "paid" ? "Paga" : "Pendente",
         t.due_date ? t.due_date.split("-").reverse().join("/") : "",

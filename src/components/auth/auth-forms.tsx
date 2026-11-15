@@ -27,8 +27,8 @@ export function SignInForm({ next }: { next?: string }) {
       <Field name="password" label="Senha" type="password" autoComplete="current-password" error={fe(state, "password")} />
       <SubmitButton size="lg" pendingText="Entrando…">Entrar</SubmitButton>
       <div className="flex flex-col items-center gap-2 text-sm">
-        <Link href="/recuperar-senha" className="text-primary underline-offset-4 hover:underline">Esqueci minha senha</Link>
-        <Link href="/cadastro" className="text-primary underline-offset-4 hover:underline">Criar conta e cadastrar meu salão</Link>
+        <Link href="/recuperar-senha" className="text-primary underline underline-offset-4 hover:no-underline">Esqueci minha senha</Link>
+        <Link href="/cadastro" className="text-primary underline underline-offset-4 hover:no-underline">Criar conta e cadastrar meu salão</Link>
       </div>
     </form>
   );
@@ -45,7 +45,7 @@ export function SignUpForm() {
       <Field name="password" label="Senha (mínimo 8 caracteres)" type="password" autoComplete="new-password" error={fe(state, "password")} />
       <SubmitButton size="lg" pendingText="Criando…">Criar conta</SubmitButton>
       <p className="text-center text-sm">
-        Já tem conta? <Link href="/entrar" className="text-primary underline-offset-4 hover:underline">Entrar</Link>
+        Já tem conta? <Link href="/entrar" className="text-primary underline underline-offset-4 hover:no-underline">Entrar</Link>
       </p>
     </form>
   );
@@ -65,7 +65,7 @@ export function ResetRequestForm() {
       <FormError message={topError(state)} />
       <Field name="email" label="E-mail" type="email" autoComplete="email" inputMode="email" error={fe(state, "email")} />
       <SubmitButton size="lg" pendingText="Enviando…">Enviar link</SubmitButton>
-      <Link href="/entrar" className="text-center text-sm text-primary underline-offset-4 hover:underline">Voltar para o login</Link>
+      <Link href="/entrar" className="text-center text-sm text-primary underline underline-offset-4 hover:no-underline">Voltar para o login</Link>
     </form>
   );
 }

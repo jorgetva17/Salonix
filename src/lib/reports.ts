@@ -55,3 +55,11 @@ export function toCsv(header: string[], rows: (string | number | null)[][]): str
 }
 
 export const csvMoney = money;
+
+/**
+ * Texto livre (nome de cliente, descrição…) exportado para planilha: se começar com = + - @ (ou TAB/CR),
+ * o Excel/Sheets executaria como fórmula. Prefixamos com apóstrofo para tratar como texto.
+ */
+export function csvText(value: string): string {
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}

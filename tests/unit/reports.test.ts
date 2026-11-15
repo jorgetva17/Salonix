@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csvMoney, parsePeriod, percentOf, periodFor, toCsv } from "@/lib/reports";
+import { csvMoney, csvText, parsePeriod, percentOf, periodFor, toCsv } from "@/lib/reports";
 
 describe("períodos", () => {
   it("presets", () => {
@@ -16,6 +16,15 @@ describe("períodos", () => {
     expect(parsePeriod("2026-11-15", "2026-11-01", "2026-11-20")).toEqual({ from: "2026-11-01", to: "2026-11-30" }); // invertido
     expect(parsePeriod("lixo", undefined, "2026-11-20")).toEqual({ from: "2026-11-01", to: "2026-11-30" });
     expect(parsePeriod("2024-01-01", "2026-11-01", "2026-11-20").from).toBe("2026-11-01"); // > 1 ano
+  });
+});
+
+describe("csvText (injeção de fórmula)", () => {
+  it.each(["=HYPERLINK(\"http://x\")", "+1+1", "-2+3", "@SUM(A1)", "\tcmd"])("neutraliza %j", (v) => expect(csvText(v)).toBe(`'${v}`));
+  it("não altera textos comuns", () => {
+    expect(csvText("Maria Souza")).toBe("Maria Souza");
+    expect(csvText("Corte + Barba")).toBe("Corte + Barba");
+    expect(csvText("")).toBe("");
   });
 });
 
