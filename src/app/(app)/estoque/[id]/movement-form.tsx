@@ -25,8 +25,8 @@ export function MovementForm({ itemId, unit }: { itemId: string; unit: string })
   useEffect(() => {
     if (state?.ok && "message" in state) {
       toast.success(state.message);
+      // Limpa quantidade, custo e motivo; o tipo escolhido continua.
       formRef.current?.reset();
-      setType("in");
     }
   }, [state]);
 
