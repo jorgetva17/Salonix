@@ -34,7 +34,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const { data: rows, error } = await supabase
     .from("commissions")
     .select(
-      "id, professional_id, base_cents, percent, amount_cents, status, created_at, professionals(name), appointments(customers(name)), appointment_items(services(name))",
+      "id, appointment_id, reverses_id, professional_id, base_cents, percent, amount_cents, status, created_at, professionals(name), appointments(customers(name)), appointment_items(services(name))",
     )
     .eq("salon_id", salon.id)
     .eq("reference_month", `${month}-01`)
@@ -63,6 +63,10 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     else if (r.status === "paid") g.paid += r.amount_cents;
     g.rows.push(r);
   }
+  // Resumo do profissional: atendimentos e valor dos próprios serviços no mês, sem estornos.
+  const own = rows.filter((r) => r.status !== "reversed" && !r.reverses_id);
+  const myAppointments = new Set(own.map((r) => r.appointment_id)).size;
+  const myServicesCents = own.reduce((sum, r) => sum + r.base_cents, 0);
   const list = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const [year, monthNumber] = month.split("-").map(Number);
   const nav = (m: string) => `/financeiro?mes=${m}`;
@@ -84,6 +88,12 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
         </div>
       </div>
       {isAdmin && <FinanceTabs current="comissoes" />}
+      {!isAdmin && (
+        <p className="text-sm text-muted-foreground" data-testid="my-summary">
+          {myAppointments} {myAppointments === 1 ? "atendimento" : "atendimentos"} no mês · serviços{" "}
+          <span className="font-medium text-foreground tabular-nums">{formatBRL(myServicesCents)}</span>
+        </p>
+      )}
 
       {list.length === 0 ? (
         <EmptyState icon={TrendingUp} title="Nenhuma comissão neste mês" description="As comissões aparecem aqui quando um atendimento é recebido." />
