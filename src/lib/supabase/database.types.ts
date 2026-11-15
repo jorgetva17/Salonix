@@ -241,6 +241,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"equipment": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"notes": string | null,"professional_id": string | null,"salon_id": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"notes"?: string | null,"professional_id"?: string | null,"salon_id": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"notes"?: string | null,"professional_id"?: string | null,"salon_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "equipment_professional_id_salon_id_fkey"
+      columns: ["professional_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "professionals"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "equipment_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"equipment_maintenance": {
+                  Row: {
+                    "cost_cents": number,"created_at": string,"created_by": string | null,"description": string,"equipment_id": string,"id": string,"next_due": string | null,"performed_on": string,"salon_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cost_cents"?: number,"created_at"?: string,"created_by"?: string | null,"description": string,"equipment_id": string,"id"?: string,"next_due"?: string | null,"performed_on": string,"salon_id": string
+                  }
+                  Update: {
+                    "cost_cents"?: number,"created_at"?: string,"created_by"?: string | null,"description"?: string,"equipment_id"?: string,"id"?: string,"next_due"?: string | null,"performed_on"?: string,"salon_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "equipment_maintenance_equipment_id_salon_id_fkey"
+      columns: ["equipment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "equipment"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "equipment_maintenance_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"feature_flags": {
                   Row: {
                     "card_reconciliation": boolean,"pix_webhook": boolean,"salon_id": string,"updated_at": string
