@@ -93,6 +93,13 @@ Rode `npm run db:reset` antes do E2E para recarregar os usuários de demonstraç
 - Venda no balcão: produtos sem serviço, com cliente opcional, recebida pelo mesmo caixa.
 - Equipamentos com responsável, status e histórico de manutenção; a tela avisa quando a próxima
   manutenção está em até 7 dias ou atrasada.
+- Contas a pagar (aluguel, fornecedor, salários...) com vencimento, lançadas e pagas só pelo
+  admin. Paga em dinheiro, a conta sai do caixa aberto; em débito, crédito ou Pix fica fora dele.
+  Nada é apagado: conta cancelada continua no histórico.
+- Relatórios (só admin) por período, somados no banco no fuso do salão: faturamento por forma de
+  pagamento, por serviço/produto e por profissional, custo de material de cada atendimento,
+  comissões e contas pagas. Faturamento = atendimentos recebidos no período e não estornados; os
+  totais sempre fecham em centavos. O profissional vê só os próprios ganhos.
 - Logos são convertidas para PNG no servidor e gravadas no bucket `salon-logos`
   apenas pelo servidor; o bucket é público só para leitura.
 

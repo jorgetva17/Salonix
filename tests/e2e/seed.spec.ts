@@ -88,3 +88,16 @@ test.describe("estoque e equipamentos de demonstração do seed", () => {
     await expect(page.getByTestId("equipment-Máquina de corte").getByTestId("maintenance-status")).toHaveText("Manutenção próxima");
   });
 });
+
+test.describe("financeiro de demonstração do seed", () => {
+  test("admin vê contas vencendo e vencidas e o faturamento do mês", async ({ page }) => {
+    await signIn(page, "admin@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/financeiro/contas");
+    await expect(page.getByTestId("bill").filter({ hasText: "Aluguel" })).toContainText("Vence em breve");
+    await expect(page.getByTestId("bill").filter({ hasText: "Energia" })).toContainText("Vencida");
+    await page.goto("/financeiro/relatorios");
+    await expect(page.getByTestId("report-revenue")).not.toHaveText("R$ 0,00");
+    await expect(page.getByTestId("report-bills")).toHaveText("R$ 640,00");
+  });
+});

@@ -189,3 +189,26 @@ begin
   insert into public.equipment_maintenance (salon_id, equipment_id, performed_on, description, cost_cents, next_due, created_by)
   values (v_salon, v_maquina, v_today - 80, 'Revisão e afiação', 8000, v_today + 5, v_admin);
 end $$;
+
+-- Financeiro de demonstração (Fase 6) -----------------------------------------
+-- Os atendimentos pagos acima ganham a data do recebimento e o valor líquido dos
+-- itens (sem desconto no seed). Contas: aluguel vencendo em 5 dias, energia vencida
+-- há 2 dias e o fornecedor pago em Pix hoje cedo.
+
+do $$
+declare
+  v_salon uuid := '00000000-0000-4000-8000-000000000001';
+  v_admin uuid := '00000000-0000-4000-8000-0000000000a1';
+  v_today date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  update public.appointments set paid_at = now() - interval '150 minutes'
+  where salon_id = v_salon and status = 'paid' and paid_at is null;
+  update public.appointment_items i set net_cents = i.unit_price_cents * i.quantity
+  from public.appointments a
+  where a.id = i.appointment_id and a.salon_id = v_salon and a.status = 'paid' and i.net_cents is null;
+
+  insert into public.transactions (salon_id, type, category, amount_cents, method, status, due_date, paid_at, description, created_by) values
+    (v_salon, 'expense', 'aluguel', 250000, null, 'pending', v_today + 5, null, 'Aluguel do salão', v_admin),
+    (v_salon, 'expense', 'outros', 38000, null, 'pending', v_today - 2, null, 'Energia', v_admin),
+    (v_salon, 'expense', 'fornecedor', 64000, 'pix', 'paid', v_today, now() - interval '2 hours', 'Distribuidora de cosméticos', v_admin);
+end $$;
