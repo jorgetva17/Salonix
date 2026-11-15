@@ -26,3 +26,25 @@ test("recepção consulta o estoque sem cadastrar", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Estoque", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Novo item" })).toHaveCount(0);
 });
+
+test("configurar o consumo de um item por serviço", async ({ page }) => {
+  await signUpSalon(page, { email: uniqueEmail("consumo"), salonName: "Salão Consumo" });
+  await page.goto("/servicos");
+  await page.getByRole("button", { name: "Novo serviço" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Nome").fill("Corte");
+  await dialog.getByLabel("Preço (R$)").fill("40");
+  await dialog.getByRole("button", { name: "Salvar" }).click();
+  await expect(dialog).toBeHidden();
+
+  await createStockItem(page, { name: "Shampoo", unit: "ml", min: "500" });
+  await page.getByTestId("stock-item-Shampoo").getByRole("link").click();
+  await page.getByLabel("Serviço que usa o item").selectOption({ label: "Corte" });
+  await page.getByLabel("Quantidade por atendimento (ml)").fill("15");
+  await page.getByRole("button", { name: "Adicionar" }).click();
+  await expect(page.getByTestId("consumables")).toContainText("Corte · 15 ml por atendimento");
+
+  await page.getByRole("button", { name: "Remover Corte" }).click();
+  await expect(page.getByTestId("consumables")).toHaveCount(0);
+  await expect(page.getByText("Nenhum serviço consome este item.")).toBeVisible();
+});

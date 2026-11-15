@@ -415,6 +415,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"service_consumables": {
+                  Row: {
+                    "created_at": string,"id": string,"inventory_item_id": string,"quantity": number,"salon_id": string,"service_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"inventory_item_id": string,"quantity": number,"salon_id": string,"service_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"inventory_item_id"?: string,"quantity"?: number,"salon_id"?: string,"service_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "service_consumables_inventory_item_id_salon_id_fkey"
+      columns: ["inventory_item_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "inventory_items"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "service_consumables_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "service_consumables_service_id_salon_id_fkey"
+      columns: ["service_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["id","salon_id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "active": boolean,"created_at": string,"duration_minutes": number,"id": string,"name": string,"price_cents": number,"salon_id": string,"updated_at": string

@@ -22,7 +22,7 @@ export async function recordMovement(page: Page, name: string, type: "Entrada" |
   await page.getByTestId(`stock-item-${name}`).getByRole("link").click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
   await page.getByLabel("Movimento").selectOption({ label: type });
-  await page.getByLabel(/^Quantidade/).fill(quantity);
+  await page.getByLabel(/^Quantidade( contada)? \(/).fill(quantity);
   if (cost) await page.getByLabel("Custo por unidade (R$)").fill(cost);
   await page.getByRole("button", { name: "Registrar" }).click();
   await expect(page.getByText("Movimento registrado.")).toBeVisible();

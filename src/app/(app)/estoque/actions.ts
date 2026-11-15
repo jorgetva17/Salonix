@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { firstErrors } from "@/lib/validation/auth";
 import { inventoryItemSchema, movementSchema } from "@/lib/validation/inventory";
+import { parseQuantity } from "@/lib/inventory/quantity";
 
 const uuid = z.uuid();
 
@@ -70,4 +71,34 @@ export async function recordStockMovement(_prev: FormState, formData: FormData):
   if (error) return { ok: false, error: rpcError(error.message, "Não foi possível registrar o movimento.") };
   revalidatePath("/estoque", "layout");
   return { ok: true, message: "Movimento registrado." };
+}
+
+export async function saveServiceConsumable(itemId: string, serviceId: string, quantity: string): Promise<ActionResult> {
+  const { salon } = await requireRole(["admin"]);
+  const ids = z.object({ itemId: uuid, serviceId: uuid }).safeParse({ itemId, serviceId });
+  if (!ids.success) return { ok: false, error: "Escolha o serviço." };
+  const q = parseQuantity(quantity);
+  if (q === null || q <= 0) return { ok: false, error: "Quantidade inválida." };
+  const supabase = await createServerClient();
+  // A FK composta garante que serviço e item são deste salão.
+  const { error } = await supabase
+    .from("service_consumables")
+    .upsert(
+      { salon_id: salon.id, service_id: ids.data.serviceId, inventory_item_id: ids.data.itemId, quantity: q },
+      { onConflict: "service_id,inventory_item_id" },
+    );
+  if (error) return { ok: false, error: "Não foi possível salvar o consumo." };
+  revalidatePath("/estoque", "layout");
+  return { ok: true };
+}
+
+export async function removeServiceConsumable(id: string): Promise<ActionResult> {
+  const { salon } = await requireRole(["admin"]);
+  const parsedId = uuid.safeParse(id);
+  if (!parsedId.success) return { ok: false, error: "Consumo inválido." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.from("service_consumables").delete().eq("id", parsedId.data).eq("salon_id", salon.id);
+  if (error) return { ok: false, error: "Não foi possível remover o consumo." };
+  revalidatePath("/estoque", "layout");
+  return { ok: true };
 }

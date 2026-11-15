@@ -10,6 +10,7 @@ import { MOVEMENT_LABELS, stockStatus } from "@/lib/inventory/status";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { ItemActiveButton, ItemDialog, StockStatusBadge } from "../inventory-client";
+import { ConsumablesEditor } from "./consumables-client";
 import { MovementForm } from "./movement-form";
 
 export const metadata = { title: "Item de estoque · Salonix" };
@@ -40,7 +41,15 @@ export default async function StockItemPage({ params }: { params: Promise<{ id: 
     .eq("inventory_item_id", item.id)
     .order("created_at", { ascending: false })
     .limit(50);
-  if (e2) throw e2;
+  const [{ data: consumables, error: e3 }, { data: services, error: e4 }] = await Promise.all([
+    supabase
+      .from("service_consumables")
+      .select("id, quantity, services(name)")
+      .eq("inventory_item_id", item.id)
+      .order("created_at"),
+    supabase.from("services").select("id, name").eq("salon_id", salon.id).eq("active", true).order("name"),
+  ]);
+  if (e2 || e3 || e4) throw e2 ?? e3 ?? e4;
 
   const unit = item.unit as StockUnit;
   const status = stockStatus(item.quantity, item.min_quantity);
@@ -102,6 +111,21 @@ export default async function StockItemPage({ params }: { params: Promise<{ id: 
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Usado nos serviços</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ConsumablesEditor
+            itemId={item.id}
+            unit={unit}
+            rows={consumables.map((c) => ({ id: c.id, serviceName: c.services?.name ?? "", quantity: c.quantity }))}
+            services={services}
+            canEdit={isAdmin && item.active}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
