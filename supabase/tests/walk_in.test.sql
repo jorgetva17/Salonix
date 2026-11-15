@@ -64,15 +64,15 @@ grant execute on function t.enqueue(text), t.call(text) to authenticated;
 select t.login((select v from ids where k='rec'));
 insert into ids select 'A', t.enqueue(null);
 select t.logout();
-update public.appointments set arrived_at = now() - interval '30 minutes' where id = (select v from ids where k='A');
+update public.appointments set arrived_at = now() - interval '3 seconds' where id = (select v from ids where k='A');
 select t.login((select v from ids where k='rec'));
 insert into ids select 'B', t.enqueue('p2');
 select t.logout();
-update public.appointments set arrived_at = now() - interval '20 minutes' where id = (select v from ids where k='B');
+update public.appointments set arrived_at = now() - interval '2 seconds' where id = (select v from ids where k='B');
 select t.login((select v from ids where k='rec'));
 insert into ids select 'C', t.enqueue(null);
 select t.logout();
-update public.appointments set arrived_at = now() - interval '10 minutes' where id = (select v from ids where k='C');
+update public.appointments set arrived_at = now() - interval '1 second' where id = (select v from ids where k='C');
 
 select is((select status from public.appointments where id = (select v from ids where k='A')), 'waiting', 'walk-in entra como waiting');
 select is((select starts_at from public.appointments where id = (select v from ids where k='A')), null::timestamptz, 'walk-in não reserva horário');

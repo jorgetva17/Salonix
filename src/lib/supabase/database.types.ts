@@ -255,6 +255,26 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"inventory_items": {
+                  Row: {
+                    "active": boolean,"created_at": string,"id": string,"min_quantity": number,"name": string,"quantity": number,"sale_price_cents": number | null,"salon_id": string,"unit": string,"unit_cost_cents": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"min_quantity"?: number,"name": string,"quantity"?: number,"sale_price_cents"?: number | null,"salon_id": string,"unit": string,"unit_cost_cents"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"id"?: string,"min_quantity"?: number,"name"?: string,"quantity"?: number,"sale_price_cents"?: number | null,"salon_id"?: string,"unit"?: string,"unit_cost_cents"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inventory_items_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"professional_schedules": {
                   Row: {
                     "created_at": string,"ends_at": string,"id": string,"professional_id": string,"salon_id": string,"starts_at": string,"weekday": number
@@ -409,6 +429,44 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "services_salon_id_fkey"
+      columns: ["salon_id"]
+isOneToOne: false
+      referencedRelation: "salons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"stock_movements": {
+                  Row: {
+                    "appointment_id": string | null,"appointment_item_id": string | null,"created_at": string,"created_by": string | null,"id": string,"inventory_item_id": string,"quantity": number,"reason": string | null,"reverses_id": string | null,"salon_id": string,"type": string,"unit_cost_cents": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "appointment_id"?: string | null,"appointment_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"inventory_item_id": string,"quantity": number,"reason"?: string | null,"reverses_id"?: string | null,"salon_id": string,"type": string,"unit_cost_cents"?: number | null
+                  }
+                  Update: {
+                    "appointment_id"?: string | null,"appointment_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"inventory_item_id"?: string,"quantity"?: number,"reason"?: string | null,"reverses_id"?: string | null,"salon_id"?: string,"type"?: string,"unit_cost_cents"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "stock_movements_appointment_id_salon_id_fkey"
+      columns: ["appointment_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "stock_movements_inventory_item_id_salon_id_fkey"
+      columns: ["inventory_item_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "inventory_items"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "stock_movements_reverses_id_salon_id_fkey"
+      columns: ["reverses_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "stock_movements"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "stock_movements_salon_id_fkey"
       columns: ["salon_id"]
 isOneToOne: false
       referencedRelation: "salons"
@@ -907,6 +965,27 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"record_stock_movement":
+{ Args: { "p_item_id": string,"p_quantity": number,"p_reason"?: string,"p_type": string,"p_unit_cost_cents"?: number }; Returns: {
+              "appointment_id": string | null,
+"appointment_item_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"id": string,
+"inventory_item_id": string,
+"quantity": number,
+"reason": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"type": string,
+"unit_cost_cents": number | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "stock_movements"
         isOneToOne: true
         isSetofReturn: false
       } },
