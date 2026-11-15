@@ -211,10 +211,11 @@ begin
       from incomes),
     'pix_pending_cents', coalesce((select sum(amount_cents) from incomes where method = 'pix' and status = 'pending'), 0),
     'by_item', coalesce((
-      select jsonb_agg(jsonb_build_object('type', x.item_type, 'name', x.name, 'quantity', x.quantity, 'amount_cents', x.amount)
+      select jsonb_agg(jsonb_build_object('id', x.id, 'type', x.item_type, 'name', x.name, 'quantity', x.quantity, 'amount_cents', x.amount)
                        order by x.amount desc, x.name)
       from (
-        select i.item_type, coalesce(s.name, inv.name) as name, sum(i.quantity) as quantity, sum(i.amount) as amount
+        select coalesce(i.service_id, i.inventory_item_id) as id, i.item_type, coalesce(s.name, inv.name) as name,
+               sum(i.quantity) as quantity, sum(i.amount) as amount
         from items i
         left join public.services s on s.id = i.service_id
         left join public.inventory_items inv on inv.id = i.inventory_item_id

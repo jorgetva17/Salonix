@@ -5,7 +5,8 @@ export type Period = { from: string; to: string };
 /** Mesmo limite do finance_report: até 366 dias, contando o primeiro e o último. */
 const MAX_DAYS = 366;
 
-function isDate(value: string | undefined): value is string {
+/** `YYYY-MM-DD` que existe no calendário. */
+export function isDate(value: string | undefined): value is string {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   // Uma data inexistente (30/02) muda ao passar pelo Date.
   const date = new Date(`${value}T00:00:00Z`);

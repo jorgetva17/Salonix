@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(28);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -92,6 +92,9 @@ select is((select (j->'by_method'->>'pix')::int from r), 2999, 'Pix, mesmo pende
 select is((select (j->>'pix_pending_cents')::int from r), 2999, 'Pix a confirmar');
 select is((select ((j->>'services_cents')::int, (j->>'products_cents')::int)::text from r), '(7199,1800)', 'serviços e produtos');
 select is((select sum((x->>'amount_cents')::int)::int from r, jsonb_array_elements(j->'by_item') x), 8999, 'por item fecha com o total');
+select is((select array_agg(x->>'id' order by x->>'id') from r, jsonb_array_elements(j->'by_item') x),
+  (select array_agg(v::text order by v::text) from ids where k in ('corte', 'barba', 'pomada')),
+  'cada linha por item traz o id do serviço ou produto');
 select is((select (j->'by_method'->>'cash')::int + (j->'by_method'->>'debit')::int + (j->'by_method'->>'credit')::int + (j->'by_method'->>'pix')::int from r),
   8999, 'por forma fecha com o total');
 select is((select j->'by_professional' from r), '[{"name": "Paulo", "appointments": 1, "amount_cents": 7199}]'::jsonb, 'por profissional só serviços');
@@ -121,6 +124,20 @@ select is((select j->'refunded' from oct), '{"appointments": 1, "amount_cents": 
 select is((select count(*)::int from jsonb_array_elements((t.report('2026-11-01', '2026-11-30'))->'costs') x
   where x->>'appointment_id' in ((select v from ids where k='a2')::text, (select v from ids where k='a3')::text)), 0,
   'novembro não traz os de outubro');
+
+-- Preenchimento dos já pagos -----------------------------------------------------------
+-- O mesmo auxiliar do backfill da migration reparte o desconto de um atendimento antigo.
+select t.logout();
+update public.appointment_items set net_cents = null where appointment_id = (select v from ids where k='a1');
+select public.set_item_net_cents((select v from ids where k='a1'), 1001);
+select is((select array_agg(net_cents order by created_at, id) from public.appointment_items where appointment_id = (select v from ids where k='a1')),
+  array[4049, 3150, 1800], 'auxiliar do backfill reparte o desconto como o recebimento');
+-- Nenhum atendimento pago do banco (seed e testes) fica sem data ou com itens que não fecham.
+select is((select count(*)::int from public.appointments a
+  where a.status = 'paid' and (a.paid_at is null or a.total_cents - a.discount_cents is distinct from
+    (select sum(i.net_cents) from public.appointment_items i where i.appointment_id = a.id))), 0,
+  'pagos têm data e valor líquido que fecha com o total');
+select t.login((select v from ids where k='ana'));
 
 -- Contas pagas ------------------------------------------------------------------------
 select public.create_bill((select v from ids where k='salon_a'), 'outros', 'Luz', 8000, t.today(), 'debit');

@@ -24,7 +24,7 @@ type Report = {
   products_cents: number;
   by_method: Record<(typeof PAYMENT_METHODS)[number], number>;
   pix_pending_cents: number;
-  by_item: { type: "service" | "product"; name: string; quantity: number; amount_cents: number }[];
+  by_item: { id: string; type: "service" | "product"; name: string; quantity: number; amount_cents: number }[];
   by_professional: { name: string; appointments: number; amount_cents: number }[];
   material_cost_cents: number;
   commission_cents: number;
@@ -169,7 +169,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     testId="report-by-item"
                     total={total}
                     rows={r.by_item.map((i) => ({
-                      key: `${i.type}-${i.name}`,
+                      key: i.id,
                       label: i.name,
                       detail: `${i.type === "product" ? "produto" : "serviço"} × ${i.quantity}`,
                       amount: i.amount_cents,

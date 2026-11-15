@@ -25,4 +25,9 @@ describe("billSchema", () => {
     expect(firstErrors(billSchema.safeParse({ ...base, category: "comissao" })).category).toBe("Escolha a categoria");
     expect(firstErrors(billSchema.safeParse({ ...base, dueDate: "" })).dueDate).toBe("Informe o vencimento");
   });
+
+  it("recusa vencimento que não existe no calendário", () => {
+    expect(firstErrors(billSchema.safeParse({ ...base, dueDate: "2026-02-30" })).dueDate).toBe("Data inválida");
+    expect(billSchema.parse({ ...base, dueDate: "2028-02-29" }).dueDate).toBe("2028-02-29");
+  });
 });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { PAYMENT_METHODS } from "@/lib/cash/methods";
 import { BILL_CATEGORIES } from "@/lib/finance/bills";
+import { isDate } from "@/lib/finance/period";
 import { parseBRLToCents } from "@/lib/money";
 
 export const billSchema = z
@@ -19,7 +20,10 @@ export const billSchema = z
       }
       return cents;
     }),
-    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe o vencimento"),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Informe o vencimento")
+      .refine((v) => isDate(v), "Data inválida"),
     paidMethod: z.union([z.literal("").transform(() => null), z.enum(PAYMENT_METHODS)], { error: "Forma de pagamento inválida" }),
   })
   .transform(({ amount, ...rest }) => ({ ...rest, amountCents: amount }));

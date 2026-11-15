@@ -61,7 +61,8 @@ begin
 end;
 $$;
 
--- Trava a conta e confere salão, permissão e status.
+-- Confere salão e permissão, depois trava a conta e confere o status. A permissão
+-- vem antes da trava para que outro salão nunca segure a linha deste.
 create or replace function public.lock_pending_bill(p_transaction_id uuid)
 returns public.transactions
 language plpgsql
@@ -69,15 +70,17 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_salon uuid;
   v_bill public.transactions;
 begin
-  select * into v_bill from public.transactions where id = p_transaction_id for update;
-  if v_bill.id is null then
+  select salon_id into v_salon from public.transactions where id = p_transaction_id;
+  if v_salon is null then
     raise exception 'Conta não encontrada.';
   end if;
-  if public.has_salon_role(v_bill.salon_id, '{admin}') is not true then
+  if public.has_salon_role(v_salon, '{admin}') is not true then
     raise exception 'Sem permissão.';
   end if;
+  select * into v_bill from public.transactions where id = p_transaction_id for update;
   if v_bill.type <> 'expense' or not public.is_bill_category(v_bill.category) or v_bill.status <> 'pending' then
     raise exception 'Conta não pode mudar deste status.';
   end if;
