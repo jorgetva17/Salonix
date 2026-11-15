@@ -116,9 +116,9 @@ create policy appointments_select on public.appointments for select to authentic
     )
   );
 create policy appointment_items_select on public.appointment_items for select to authenticated
-  using (exists (select 1 from public.appointments a where a.id = appointment_id and a.salon_id = salon_id));
+  using (exists (select 1 from public.appointments a where a.id = appointment_items.appointment_id and a.salon_id = appointment_items.salon_id));
 create policy appointment_events_select on public.appointment_events for select to authenticated
-  using (exists (select 1 from public.appointments a where a.id = appointment_id and a.salon_id = salon_id));
+  using (exists (select 1 from public.appointments a where a.id = appointment_events.appointment_id and a.salon_id = appointment_events.salon_id));
 
 grant select on public.appointments, public.appointment_items, public.appointment_events to authenticated;
 grant all on public.appointments, public.appointment_items, public.appointment_events to service_role;

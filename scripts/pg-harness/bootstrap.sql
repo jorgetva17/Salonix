@@ -64,4 +64,7 @@ $$;
 grant usage on schema storage to anon, authenticated, service_role;
 grant all on storage.buckets, storage.objects to authenticated, service_role;
 grant select on storage.buckets to anon;
-alter default privileges in schema public grant all on tables to service_role;
+-- Emula os privilégios padrão do Supabase (tudo para anon/authenticated/service_role em objetos novos).
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
