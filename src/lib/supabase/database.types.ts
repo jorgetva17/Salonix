@@ -51,14 +51,14 @@ isOneToOne: false
                   ]
                 },"appointment_items": {
                   Row: {
-                    "appointment_id": string,"created_at": string,"duration_minutes": number,"id": string,"inventory_item_id": string | null,"item_type": string,"professional_id": string | null,"quantity": number,"salon_id": string,"service_id": string | null,"unit_price_cents": number
+                    "appointment_id": string,"created_at": string,"duration_minutes": number,"id": string,"inventory_item_id": string | null,"item_type": string,"net_cents": number | null,"professional_id": string | null,"quantity": number,"salon_id": string,"service_id": string | null,"unit_price_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_id": string,"created_at"?: string,"duration_minutes": number,"id"?: string,"inventory_item_id"?: string | null,"item_type": string,"professional_id"?: string | null,"quantity"?: number,"salon_id": string,"service_id"?: string | null,"unit_price_cents": number
+                    "appointment_id": string,"created_at"?: string,"duration_minutes": number,"id"?: string,"inventory_item_id"?: string | null,"item_type": string,"net_cents"?: number | null,"professional_id"?: string | null,"quantity"?: number,"salon_id": string,"service_id"?: string | null,"unit_price_cents": number
                   }
                   Update: {
-                    "appointment_id"?: string,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"inventory_item_id"?: string | null,"item_type"?: string,"professional_id"?: string | null,"quantity"?: number,"salon_id"?: string,"service_id"?: string | null,"unit_price_cents"?: number
+                    "appointment_id"?: string,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"inventory_item_id"?: string | null,"item_type"?: string,"net_cents"?: number | null,"professional_id"?: string | null,"quantity"?: number,"salon_id"?: string,"service_id"?: string | null,"unit_price_cents"?: number
                   }
                   Relationships: [
                     {
@@ -95,14 +95,14 @@ isOneToOne: false
                   ]
                 },"appointments": {
                   Row: {
-                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string | null,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"refunded_at": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
+                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string | null,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"paid_at": string | null,"professional_id": string | null,"refunded_at": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"paid_at"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
                   }
                   Update: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"paid_at"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -631,6 +631,7 @@ isOneToOne: false
 "id": string,
 "inventory_item_id": string | null,
 "item_type": string,
+"net_cents": number | null,
 "professional_id": string | null,
 "quantity": number,
 "salon_id": string,
@@ -651,6 +652,7 @@ isOneToOne: false
 "id": string,
 "inventory_item_id": string | null,
 "item_type": string,
+"net_cents": number | null,
 "professional_id": string | null,
 "quantity": number,
 "salon_id": string,
@@ -684,6 +686,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -716,6 +719,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -767,6 +771,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -823,6 +828,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -874,6 +880,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -925,6 +932,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -993,6 +1001,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1007,6 +1016,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"finance_report":
+{ Args: { "p_from": string,"p_salon_id": string,"p_to": string }; Returns: Json
+                           },
 "has_salon_role":
 { Args: { "p_roles": (Database["public"]['Enums']["salon_role"])[],"p_salon_id": string }; Returns: boolean
                            },
@@ -1018,6 +1030,7 @@ isOneToOne: false
 "id": string,
 "inventory_item_id": string | null,
 "item_type": string,
+"net_cents": number | null,
 "professional_id": string | null,
 "quantity": number,
 "salon_id": string,
@@ -1054,6 +1067,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1080,6 +1094,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1131,6 +1146,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1217,6 +1233,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1243,6 +1260,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1290,6 +1308,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1316,6 +1335,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1342,6 +1362,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1368,6 +1389,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1407,6 +1429,9 @@ isOneToOne: false
                            },
 "services_totals":
 { Args: { "p_salon_id": string,"p_service_ids": (string)[] }; Returns: Record<string, unknown>
+                           },
+"set_item_net_cents":
+{ Args: { "p_appointment_id": string,"p_discount_cents": number }; Returns: undefined
                            },
 "set_professional_schedule":
 { Args: { "p_professional_id": string,"p_slots": Json }; Returns: {
@@ -1467,6 +1492,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
@@ -1493,6 +1519,7 @@ isOneToOne: false
 "id": string,
 "kind": string,
 "notes": string | null,
+"paid_at": string | null,
 "professional_id": string | null,
 "refunded_at": string | null,
 "salon_id": string,
