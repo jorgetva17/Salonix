@@ -24,6 +24,13 @@ test("venda no balcão e produto no atendimento", async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(page.getByTestId("expected-cash")).toHaveText("R$ 170,00");
 
+  // A venda recebida baixou o estoque.
+  await page.goto("/estoque");
+  await expect(page.getByTestId("stock-item-Pomada").getByTestId("stock-quantity")).toHaveText("8 un");
+  await page.getByTestId("stock-item-Pomada").getByRole("link").click();
+  await expect(page.getByTestId("movement").first()).toContainText("Saída -2 un");
+  await expect(page.getByTestId("movement").first()).toContainText("Venda no balcão");
+
   // Produto num atendimento em curso.
   await bookTomorrow(page, "Gabi Teste", "10:00");
   const gabi = page.getByTestId("agenda-appointment").filter({ hasText: "Gabi Teste" });

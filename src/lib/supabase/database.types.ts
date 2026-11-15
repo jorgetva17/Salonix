@@ -614,6 +614,9 @@ isOneToOne: false
 "allocate_discount":
 { Args: { "p_amounts": (number)[],"p_discount": number }; Returns: (number)[]
                            },
+"apply_stock_for_appointment":
+{ Args: { "p_appointment_id": string }; Returns: undefined
+                           },
 "assert_slot_available":
 { Args: { "p_ends_at": string,"p_professional_id": string,"p_starts_at": string,"p_timezone": string }; Returns: undefined
                            },
