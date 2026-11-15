@@ -17,6 +17,10 @@ const RPC_MESSAGES = new Set([
   "Atendimento já estornado.",
   "Abra o caixa antes de estornar.",
   "Informe o motivo do estorno.",
+  "Item de estoque não encontrado.",
+  "Quantidade inválida.",
+  "Produto sem preço de venda.",
+  "Venda precisa de pelo menos um produto.",
 ]);
 
 export function rpcError(message: string | undefined, fallback: string): string {
