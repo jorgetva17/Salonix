@@ -6,9 +6,11 @@ do $$ begin create role service_role nologin bypassrls; exception when duplicate
 grant usage on schema public to anon, authenticated, service_role;
 
 create schema extensions;
+create publication supabase_realtime;
 create extension pgcrypto with schema extensions;
 create extension citext with schema extensions;
 create extension pgtap with schema extensions;
+create extension btree_gist with schema extensions;
 grant usage on schema extensions to anon, authenticated, service_role;
 
 create schema auth;
