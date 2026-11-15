@@ -79,7 +79,7 @@ $$, '42501', null, 'profissional não cria equipamento');
 delete from public.equipment_maintenance;
 select t.logout();
 select is((select status from public.equipment where id = (select v from ids where k='eq')), 'active', 'update da recepção não muda o status');
-select is((select count(*)::int from public.equipment_maintenance), 1, 'delete do profissional não apaga manutenção');
+select is((select count(*)::int from public.equipment_maintenance where equipment_id = (select v from ids where k='eq')), 1, 'delete do profissional não apaga manutenção');
 
 select t.login((select v from ids where k='bia'));
 select is((select count(*)::int from public.equipment) + (select count(*)::int from public.equipment_maintenance), 0, 'outro salão não lê nada');
