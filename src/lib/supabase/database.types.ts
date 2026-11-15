@@ -2,9 +2,11 @@
  * Tipos do banco. Regerar com `npm run db:types` quando o Supabase local estiver
  * rodando. (Versão inicial escrita à mão a partir das migrations da Fase 1.)
  */
+export type CashAmounts = { cash: number; debit: number; credit: number; pix: number; pending_pix?: number };
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type SalonRole = "admin" | "reception" | "professional";
+export type PaymentMethod = "cash" | "debit" | "credit" | "pix";
 export type AppointmentKind = "scheduled" | "walk_in";
 export type AppointmentStatus = "scheduled" | "waiting" | "in_progress" | "awaiting_payment" | "paid" | "cancelled" | "no_show";
 export type AppointmentRow = {
@@ -166,6 +168,66 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      cash_sessions: {
+        Row: {
+          id: string;
+          salon_id: string;
+          opened_by: string | null;
+          opened_at: string;
+          opening_cents: number;
+          closed_by: string | null;
+          closed_at: string | null;
+          expected: CashAmounts | null;
+          counted: CashAmounts | null;
+          difference_cents: number | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      transactions: {
+        Row: {
+          id: string;
+          salon_id: string;
+          type: "income" | "expense";
+          category: string;
+          description: string;
+          amount_cents: number;
+          payment_method: PaymentMethod | null;
+          status: "pending" | "paid" | "reversed";
+          due_date: string | null;
+          paid_at: string | null;
+          appointment_id: string | null;
+          cash_session_id: string | null;
+          reverses_id: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      commissions: {
+        Row: {
+          id: string;
+          salon_id: string;
+          appointment_id: string;
+          item_id: string | null;
+          professional_id: string;
+          base_cents: number;
+          percent: number;
+          amount_cents: number;
+          reference_month: string;
+          status: "blocked" | "available" | "paid" | "reversed";
+          paid_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       feature_flags: {
         Row: { salon_id: string; card_reconciliation: boolean; pix_webhook: boolean };
         Insert: { salon_id: string; card_reconciliation?: boolean; pix_webhook?: boolean };
@@ -202,6 +264,16 @@ export type Database = {
       start_appointment: { Args: { p_appointment_id: string }; Returns: AppointmentRow };
       call_next: { Args: { p_salon_id: string; p_professional_id: string }; Returns: AppointmentRow | null };
       my_professional_id: { Args: { p_salon_id: string }; Returns: string | null };
+      add_appointment_item: { Args: { p_appointment_id: string; p_service_id: string }; Returns: AppointmentRow };
+      remove_appointment_item: { Args: { p_item_id: string }; Returns: AppointmentRow };
+      complete_appointment: { Args: { p_appointment_id: string }; Returns: AppointmentRow };
+      open_cash_session: { Args: { p_salon_id: string; p_opening_cents: number }; Returns: Database["public"]["Tables"]["cash_sessions"]["Row"] };
+      cash_session_summary: { Args: { p_session_id: string }; Returns: CashAmounts };
+      close_cash_session: { Args: { p_session_id: string; p_counted: Json }; Returns: Database["public"]["Tables"]["cash_sessions"]["Row"] };
+      receive_payment: { Args: { p_appointment_id: string; p_payments: Json; p_discount_cents?: number }; Returns: AppointmentRow };
+      confirm_pix: { Args: { p_transaction_id: string }; Returns: Database["public"]["Tables"]["transactions"]["Row"] };
+      reverse_appointment: { Args: { p_appointment_id: string; p_reason?: string }; Returns: AppointmentRow };
+      pay_commissions: { Args: { p_salon_id: string; p_professional_id: string; p_month: string; p_create_expense?: boolean }; Returns: { paid_cents: number; count: number } };
       is_salon_member: { Args: { p_salon_id: string }; Returns: boolean };
       has_salon_role: { Args: { p_salon_id: string; p_roles: SalonRole[] }; Returns: boolean };
     };

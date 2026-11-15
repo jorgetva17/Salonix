@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CallNextButton, QueueEntryActions } from "@/components/agenda/queue-actions";
 import { WalkInForm } from "@/components/agenda/forms";
 import { RealtimeRefresh } from "@/components/agenda/realtime-refresh";
 import { EmptyState } from "@/components/states/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { estimateWaits, freeAtFor } from "@/lib/agenda";
 import { withDetails } from "@/lib/agenda-data";
@@ -90,6 +92,7 @@ export default async function FilaPage() {
                     </p>
                   </div>
                   {(canManage || mine) && !cur ? <CallNextButton professionalId={p.id} professionalName={p.name} /> : null}
+                  {cur ? <Button asChild variant="secondary"><Link href={`/atendimento/${cur.id}`}>Abrir atendimento</Link></Button> : null}
                 </li>
               );
             })}

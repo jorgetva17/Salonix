@@ -190,6 +190,9 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
                     ) : null}
                     {a.notes ? <p className="mt-1 text-sm">{a.notes}</p> : null}
                   </div>
+                  {["in_progress", "awaiting_payment", "paid"].includes(a.status) ? (
+                    <Button asChild variant="secondary" size="sm"><Link href={`/atendimento/${a.id}`}>Abrir atendimento</Link></Button>
+                  ) : null}
                   {!done && a.status === "scheduled" ? (
                     <div className="flex flex-col items-end gap-2">
                       <AppointmentActions id={a.id} name={a.displayName} canManage={canManage} canStart />
