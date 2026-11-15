@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RealtimeRefresh } from "@/components/agenda/realtime-refresh";
 import { ConfirmPixButton } from "@/components/cash/appointment-flow";
-import { CloseCashForm, OpenCashForm } from "@/components/cash/cash-forms";
+import { CloseCashForm, CounterSaleForm, OpenCashForm } from "@/components/cash/cash-forms";
 import { EmptyState } from "@/components/states/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,15 @@ export default async function CaixaPage() {
   const supabase = await createServerClient();
 
   const { data: open } = await supabase.from("cash_sessions").select("*").is("closed_at", null).maybeSingle();
-  const [{ data: awaitingRows }, { data: pendingPix }, { data: history }, summary] = await Promise.all([
+  const [{ data: awaitingRows }, { data: pendingPix }, { data: history }, summary, { data: products }, { data: customers }] = await Promise.all([
     supabase.from("appointments").select("*").eq("status", "awaiting_payment").order("updated_at"),
     open
       ? supabase.from("transactions").select("*").eq("cash_session_id", open.id).eq("payment_method", "pix").eq("status", "pending").eq("type", "income")
       : Promise.resolve({ data: [] }),
     supabase.from("cash_sessions").select("*").not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(5),
     open ? supabase.rpc("cash_session_summary", { p_session_id: open.id }) : Promise.resolve({ data: null }),
+    supabase.from("inventory_items").select("id, name, sale_price_cents").eq("active", true).not("sale_price_cents", "is", null).order("name"),
+    supabase.from("customers").select("id, name").order("name").limit(300),
   ]);
   const awaiting = await withDetails(supabase, awaitingRows ?? []);
   const expected = summary.data;
@@ -109,6 +111,18 @@ export default async function CaixaPage() {
           </ul>
         )}
       </section>
+
+      {(products ?? []).length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Venda de produto no balcão</CardTitle>
+            <CardDescription>Cria uma venda sem atendimento; depois é só receber em “A receber”.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CounterSaleForm products={(products ?? []).map((p) => ({ id: p.id, name: p.name, priceCents: p.sale_price_cents ?? 0 }))} customers={customers ?? []} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {open ? (
         <Card>

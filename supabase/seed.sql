@@ -102,3 +102,33 @@ begin
   insert into public.appointment_items (appointment_id, salon_id, service_id, description, unit_price_cents, duration_minutes, professional_id)
   values (v_appt, v_salon, '5a10a000-0000-4000-8000-0000000000c1', 'Corte', 4500, 30, '5a10a000-0000-4000-8000-0000000000d1');
 end $$;
+
+-- Estoque e equipamentos de demonstração
+do $$
+declare
+  v_salon uuid := '5a10a000-0000-4000-8000-000000000001';
+begin
+  if exists (select 1 from public.inventory_items) then
+    return;
+  end if;
+  insert into public.inventory_items (id, salon_id, name, unit, min_quantity, sale_price_cents) values
+    ('5a10a000-0000-4000-8000-0000000000e1', v_salon, 'Shampoo', 'ml', 200, null),
+    ('5a10a000-0000-4000-8000-0000000000e2', v_salon, 'Pomada modeladora', 'un', 2, 3500),
+    ('5a10a000-0000-4000-8000-0000000000e3', v_salon, 'Lâmina descartável', 'un', 10, null);
+  insert into public.inventory_item_costs (item_id, salon_id, unit_cost_cents) values
+    ('5a10a000-0000-4000-8000-0000000000e1', v_salon, 2),
+    ('5a10a000-0000-4000-8000-0000000000e2', v_salon, 1800),
+    ('5a10a000-0000-4000-8000-0000000000e3', v_salon, 150);
+  insert into public.stock_movements (salon_id, item_id, type, delta, unit_cost_cents, reason) values
+    (v_salon, '5a10a000-0000-4000-8000-0000000000e1', 'in', 1000, 2, 'Estoque inicial'),
+    (v_salon, '5a10a000-0000-4000-8000-0000000000e2', 'in', 5, 1800, 'Estoque inicial'),
+    (v_salon, '5a10a000-0000-4000-8000-0000000000e3', 'in', 8, 150, 'Estoque inicial'); -- abaixo do mínimo: gera alerta
+  insert into public.service_consumables (salon_id, service_id, item_id, quantity) values
+    (v_salon, '5a10a000-0000-4000-8000-0000000000c1', '5a10a000-0000-4000-8000-0000000000e1', 20),
+    (v_salon, '5a10a000-0000-4000-8000-0000000000c2', '5a10a000-0000-4000-8000-0000000000e3', 1);
+
+  insert into public.equipment (id, salon_id, name, responsible_id, notes) values
+    ('5a10a000-0000-4000-8000-0000000000f1', v_salon, 'Máquina de corte', '5a10a000-0000-4000-8000-0000000000d1', 'Lâmina trocada a cada 3 meses');
+  insert into public.equipment_maintenance (salon_id, equipment_id, performed_on, description, next_due_on)
+  values (v_salon, '5a10a000-0000-4000-8000-0000000000f1', current_date - 90, 'Troca de lâmina e lubrificação', current_date + 3);
+end $$;

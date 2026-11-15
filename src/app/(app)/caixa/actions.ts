@@ -5,6 +5,8 @@ import type { ActionResult } from "@/lib/action-result";
 import { rpcFailure } from "@/lib/actions/rpc";
 import { parseBRLToCents } from "@/lib/format";
 import { METHODS } from "@/lib/payments";
+import { parseForm } from "@/lib/actions/parse";
+import { counterSaleSchema } from "@/lib/validation/stock";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -34,6 +36,23 @@ export async function closeCashSession(_prev: ActionResult | null, formData: For
   if (Object.keys(fieldErrors).length > 0) return { ok: false, error: "Confira os campos", fieldErrors };
   const supabase = await createServerClient();
   const { error } = await supabase.rpc("close_cash_session", { p_session_id: sessionId, p_counted: counted });
+  if (error) return rpcFailure(error);
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
+export async function createCounterSale(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const { membership } = await requireRole(["admin", "reception"]);
+  const parsed = parseForm(counterSaleSchema, formData);
+  if (!parsed.ok) return parsed.result;
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("create_counter_sale", {
+    p_salon_id: membership.salonId,
+    p_customer_id: parsed.data.customerId ?? null,
+    p_guest_name: parsed.data.guestName || null,
+    p_inventory_item_id: parsed.data.inventoryItemId,
+    p_quantity: parsed.data.quantity,
+  });
   if (error) return rpcFailure(error);
   revalidatePath("/caixa");
   return { ok: true };

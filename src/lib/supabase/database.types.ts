@@ -228,6 +228,48 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      inventory_items: {
+        Row: { id: string; salon_id: string; name: string; unit: string; quantity: number; min_quantity: number; sale_price_cents: number | null; active: boolean } & Timestamps;
+        Insert: { salon_id: string; name: string; unit?: string; min_quantity?: number; sale_price_cents?: number | null; active?: boolean };
+        Update: Partial<Omit<Database["public"]["Tables"]["inventory_items"]["Row"], "quantity">>;
+        Relationships: [];
+      };
+      inventory_item_costs: {
+        Row: { item_id: string; salon_id: string; unit_cost_cents: number; updated_at: string };
+        Insert: { item_id: string; salon_id: string; unit_cost_cents: number };
+        Update: Partial<Database["public"]["Tables"]["inventory_item_costs"]["Row"]>;
+        Relationships: [];
+      };
+      service_consumables: {
+        Row: { id: string; salon_id: string; service_id: string; item_id: string; quantity: number; created_at: string };
+        Insert: { salon_id: string; service_id: string; item_id: string; quantity: number };
+        Update: Partial<Database["public"]["Tables"]["service_consumables"]["Row"]>;
+        Relationships: [];
+      };
+      stock_movements: {
+        Row: { id: string; salon_id: string; item_id: string; type: "in" | "out" | "adjust" | "consumption"; delta: number; unit_cost_cents: number | null; reason: string; appointment_id: string | null; created_by: string | null; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      equipment: {
+        Row: { id: string; salon_id: string; name: string; status: "active" | "maintenance" | "inactive"; responsible_id: string | null; notes: string } & Timestamps;
+        Insert: { salon_id: string; name: string; status?: "active" | "maintenance" | "inactive"; responsible_id?: string | null; notes?: string };
+        Update: Partial<Database["public"]["Tables"]["equipment"]["Row"]>;
+        Relationships: [];
+      };
+      equipment_maintenance: {
+        Row: { id: string; salon_id: string; equipment_id: string; performed_on: string; description: string; next_due_on: string | null; created_by: string | null; created_at: string };
+        Insert: { salon_id: string; equipment_id: string; performed_on: string; description: string; next_due_on?: string | null; created_by?: string | null };
+        Update: Partial<Database["public"]["Tables"]["equipment_maintenance"]["Row"]>;
+        Relationships: [];
+      };
+      equipment_maintenance_costs: {
+        Row: { maintenance_id: string; salon_id: string; cost_cents: number };
+        Insert: { maintenance_id: string; salon_id: string; cost_cents: number };
+        Update: Partial<Database["public"]["Tables"]["equipment_maintenance_costs"]["Row"]>;
+        Relationships: [];
+      };
       feature_flags: {
         Row: { salon_id: string; card_reconciliation: boolean; pix_webhook: boolean };
         Insert: { salon_id: string; card_reconciliation?: boolean; pix_webhook?: boolean };
@@ -274,6 +316,9 @@ export type Database = {
       confirm_pix: { Args: { p_transaction_id: string }; Returns: Database["public"]["Tables"]["transactions"]["Row"] };
       reverse_appointment: { Args: { p_appointment_id: string; p_reason?: string }; Returns: AppointmentRow };
       pay_commissions: { Args: { p_salon_id: string; p_professional_id: string; p_month: string; p_create_expense?: boolean }; Returns: { paid_cents: number; count: number } };
+      record_stock_movement: { Args: { p_item_id: string; p_type: string; p_quantity: number; p_reason?: string; p_unit_cost_cents?: number | null }; Returns: Database["public"]["Tables"]["inventory_items"]["Row"] };
+      add_product_item: { Args: { p_appointment_id: string; p_inventory_item_id: string; p_quantity?: number }; Returns: AppointmentRow };
+      create_counter_sale: { Args: { p_salon_id: string; p_customer_id: string | null; p_guest_name: string | null; p_inventory_item_id: string; p_quantity: number }; Returns: AppointmentRow };
       is_salon_member: { Args: { p_salon_id: string }; Returns: boolean };
       has_salon_role: { Args: { p_salon_id: string; p_roles: SalonRole[] }; Returns: boolean };
     };

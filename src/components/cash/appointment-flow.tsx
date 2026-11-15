@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addAppointmentItem, completeAppointment, removeAppointmentItem, reverseAppointment, confirmPix } from "@/app/(app)/atendimento/actions";
+import { addAppointmentItem, addProductItem, completeAppointment, removeAppointmentItem, reverseAppointment, confirmPix } from "@/app/(app)/atendimento/actions";
 import { ActionButton } from "@/components/forms/action-button";
 import { ActionForm } from "@/components/forms/action-form";
 import { Field } from "@/components/forms/field";
@@ -19,14 +19,18 @@ export function ItemEditor({
   id,
   items,
   services,
+  products = [],
   editable,
 }: {
   id: string;
   items: { id: string; description: string; priceCents: number; quantity: number }[];
   services: { id: string; name: string; priceCents: number }[];
+  products?: { id: string; name: string; priceCents: number }[];
   editable: boolean;
 }) {
   const [serviceId, setServiceId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [quantity, setQuantity] = useState("1");
   return (
     <div className="space-y-3">
       <ul className="divide-y">
@@ -52,6 +56,22 @@ export function ItemEditor({
             </select>
           </label>
           <ActionButton variant="secondary" disabled={!serviceId} run={() => addAppointmentItem(id, serviceId)} success="Serviço adicionado">Adicionar</ActionButton>
+        </div>
+      ) : null}
+      {editable && products.length > 0 ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="grid flex-1 gap-1 text-sm font-medium">
+            Adicionar produto
+            <select value={productId} onChange={(e) => setProductId(e.target.value)} className="min-h-11 rounded-md border border-input bg-card px-3 font-normal">
+              <option value="">Escolha…</option>
+              {products.map((p) => <option key={p.id} value={p.id}>{p.name} · {formatBRL(p.priceCents)}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Qtd.
+            <input type="number" min={1} max={999} value={quantity} onChange={(e) => setQuantity(e.target.value)} className="min-h-11 w-20 rounded-md border border-input bg-card px-3 font-normal" />
+          </label>
+          <ActionButton variant="secondary" disabled={!productId} run={() => addProductItem(id, productId, Math.max(1, Number(quantity) || 1))} success="Produto adicionado">Adicionar</ActionButton>
         </div>
       ) : null}
     </div>

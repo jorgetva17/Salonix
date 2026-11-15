@@ -37,6 +37,16 @@ export async function addAppointmentItem(id: string, serviceId: string): Promise
   return { ok: true };
 }
 
+export async function addProductItem(id: string, inventoryItemId: string, quantity: number): Promise<ActionResult> {
+  await requireRole(["admin", "reception", "professional"]);
+  if (!inventoryItemId) return { ok: false, error: "Escolha um produto" };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("add_product_item", { p_appointment_id: id, p_inventory_item_id: inventoryItemId, p_quantity: quantity });
+  if (error) return rpcFailure(error);
+  refresh(id);
+  return { ok: true };
+}
+
 export async function removeAppointmentItem(id: string, itemId: string): Promise<ActionResult> {
   await requireRole(["admin", "reception", "professional"]);
   const supabase = await createServerClient();

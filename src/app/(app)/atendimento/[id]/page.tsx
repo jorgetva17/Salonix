@@ -33,9 +33,10 @@ export default async function AtendimentoPage({ params }: PageProps<"/atendiment
   if (!row) notFound();
   const [appt] = await withDetails(supabase, [row]);
 
-  const [{ data: pro }, { data: services }, { data: events }, { data: txs }, { data: commissions }] = await Promise.all([
+  const [{ data: pro }, { data: services }, { data: products }, { data: events }, { data: txs }, { data: commissions }] = await Promise.all([
     row.professional_id ? supabase.from("professionals").select("name, color").eq("id", row.professional_id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("services").select("id, name, price_cents").eq("active", true).order("name"),
+    supabase.from("inventory_items").select("id, name, sale_price_cents").eq("active", true).not("sale_price_cents", "is", null).order("name"),
     supabase.from("appointment_events").select("*").eq("appointment_id", id).order("created_at"),
     canReceive ? supabase.from("transactions").select("*").eq("appointment_id", id).order("created_at") : Promise.resolve({ data: [] }),
     supabase.from("commissions").select("*").eq("appointment_id", id),
@@ -65,6 +66,7 @@ export default async function AtendimentoPage({ params }: PageProps<"/atendiment
             editable={editable}
             items={appt.items.map((i) => ({ id: i.id, description: i.description, priceCents: i.unit_price_cents, quantity: i.quantity }))}
             services={(services ?? []).map((s) => ({ id: s.id, name: s.name, priceCents: s.price_cents }))}
+            products={(products ?? []).map((p) => ({ id: p.id, name: p.name, priceCents: p.sale_price_cents ?? 0 }))}
           />
           <p className="flex justify-between border-t pt-3 font-semibold">
             <span>Total</span><span>{formatBRL(appt.total_cents)}</span>

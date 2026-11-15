@@ -52,8 +52,8 @@ insert into public.inventory_items (id, salon_id, name, unit, min_quantity, sale
 insert into public.service_consumables (salon_id, service_id, item_id, quantity)
 values (current_setting('t.a')::uuid, '00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000d1', 20);
 
-select is((select quantity from public.inventory_items where name = 'Shampoo'), 0::numeric, 'item novo começa com estoque zero');
-select throws_ok($$update public.inventory_items set quantity = 999 where name = 'Shampoo'$$, 'P0001',
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Shampoo'), 0::numeric, 'item novo começa com estoque zero');
+select throws_ok($$update public.inventory_items set quantity = 999 where name = 'Shampoo' and salon_id = current_setting('t.a')::uuid$$, 'P0001',
   'A quantidade só pode ser alterada por movimentações de estoque', 'quantidade não é editável direto');
 
 -- movimentações ----------------------------------------------------------------------
@@ -89,8 +89,8 @@ select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
 set local role authenticated;
 select is((select status::text from public.receive_payment(current_setting('t.p1')::uuid, '[{"method":"cash","amount_cents":11500}]')), 'paid', 'recebe serviço + produto');
 reset role;
-select is((select quantity from public.inventory_items where name = 'Shampoo'), 830::numeric, 'baixa automática do material do serviço (850 - 20)');
-select is((select quantity from public.inventory_items where name = 'Pomada'), 1::numeric, 'baixa do produto vendido (3 - 2)');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Shampoo'), 830::numeric, 'baixa automática do material do serviço (850 - 20)');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Pomada'), 1::numeric, 'baixa do produto vendido (3 - 2)');
 select is((select string_agg(type || ':' || delta::text, ',' order by type) from public.stock_movements where appointment_id = current_setting('t.p1')::uuid),
   'consumption:-20.000,out:-2.000', 'movimentações ligadas ao atendimento');
 select is((select unit_cost_cents from public.stock_movements where appointment_id = current_setting('t.p1')::uuid and type = 'consumption'), 1200, 'custo do consumo fica registrado (snapshot)');
@@ -101,8 +101,8 @@ select pg_temp.claims('00000000-0000-0000-0000-0000000000a1');
 set local role authenticated;
 select public.reverse_appointment(current_setting('t.p1')::uuid, 'Erro');
 reset role;
-select is((select quantity from public.inventory_items where name = 'Shampoo'), 850::numeric, 'estorno devolve o material');
-select is((select quantity from public.inventory_items where name = 'Pomada'), 3::numeric, 'estorno devolve o produto');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Shampoo'), 850::numeric, 'estorno devolve o material');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Pomada'), 3::numeric, 'estorno devolve o produto');
 
 -- estoque negativo é permitido (não bloqueia o atendimento) ------------------------------------
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a1');
@@ -114,15 +114,15 @@ select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
 set local role authenticated;
 select lives_ok($$select public.receive_payment(current_setting('t.p2')::uuid, '[{"method":"cash","amount_cents":4500}]')$$, 'estoque insuficiente não bloqueia o recebimento');
 reset role;
-select is((select quantity from public.inventory_items where name = 'Shampoo'), -10::numeric, 'estoque fica negativo (alerta)');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Shampoo'), -10::numeric, 'estoque fica negativo (alerta)');
 
 -- venda de balcão --------------------------------------------------------------------------------
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
 set local role authenticated;
 select is((select total_cents from public.create_counter_sale(current_setting('t.a')::uuid, null, null, '00000000-0000-0000-0000-0000000000d2', 1)), 3500, 'venda de balcão nasce aguardando pagamento');
-select public.receive_payment((select id from public.appointments where status = 'awaiting_payment' and professional_id is null), '[{"method":"pix","amount_cents":3500}]');
+select public.receive_payment((select id from public.appointments where salon_id = current_setting('t.a')::uuid and status = 'awaiting_payment' and professional_id is null), '[{"method":"pix","amount_cents":3500}]');
 reset role;
-select is((select quantity from public.inventory_items where name = 'Pomada'), 2::numeric, 'venda de balcão baixa o estoque');
+select is((select quantity from public.inventory_items where salon_id = current_setting('t.a')::uuid and name = 'Pomada'), 2::numeric, 'venda de balcão baixa o estoque');
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a3');
 set local role authenticated;
 select throws_ok($$select public.create_counter_sale(current_setting('t.a')::uuid, null, null, '00000000-0000-0000-0000-0000000000d2', 1)$$, '42501', null, 'profissional não vende no balcão');

@@ -53,7 +53,7 @@ Postgres 16 comum (com um stub de `auth`/`storage`). Não substitui o `supabase 
 
 ## Estrutura
 
-- `supabase/migrations` — tenancy (RLS por `salon_id`), convites, bucket de logos, cadastros (serviços, profissionais, clientes), agenda e fila de walk-in (RPCs + Realtime), caixa, pagamentos, comissões e estorno
+- `supabase/migrations` — tenancy (RLS por `salon_id`), convites, bucket de logos, cadastros (serviços, profissionais, clientes), agenda e fila de walk-in (RPCs + Realtime), caixa, pagamentos, comissões e estorno, estoque (baixa automática) e equipamentos
 - `supabase/tests` — pgTAP
 - `src/lib/supabase` — clientes (browser, server, admin) e proxy de sessão
 - `src/app/(auth)`, `src/app/(app)` — autenticação e telas privadas
