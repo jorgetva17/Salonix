@@ -730,6 +730,31 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"cancel_bill":
+{ Args: { "p_transaction_id": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "cancel_counter_sale":
 { Args: { "p_appointment_id": string,"p_reason"?: string }; Returns: {
               "arrived_at": string | null,
@@ -863,6 +888,31 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"create_bill":
+{ Args: { "p_amount_cents": number,"p_category": string,"p_description": string,"p_due_date": string,"p_paid_method"?: string,"p_salon_id": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "create_counter_sale":
 { Args: { "p_customer_id": string,"p_items": Json,"p_salon_id": string }; Returns: {
               "arrived_at": string | null,
@@ -983,6 +1033,9 @@ isOneToOne: false
 "insert_service_items":
 { Args: { "p_appointment_id": string,"p_salon_id": string,"p_service_ids": (string)[] }; Returns: undefined
                            },
+"is_bill_category":
+{ Args: { "p_category": string }; Returns: boolean
+                           },
 "is_salon_member":
 { Args: { "p_salon_id": string }; Returns: boolean
                            },
@@ -1038,6 +1091,31 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"lock_pending_bill":
+{ Args: { "p_transaction_id": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -1099,6 +1177,31 @@ isOneToOne: false
 "open_cash_session_id":
 { Args: { "p_salon_id": string }; Returns: string
                            },
+"pay_bill":
+{ Args: { "p_method": string,"p_transaction_id": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "pay_commissions":
 { Args: { "p_expense_method"?: string,"p_month": string,"p_professional_id": string,"p_salon_id": string }; Returns: number
                            },
@@ -1320,6 +1423,31 @@ isOneToOne: false
         to: "professional_schedules"
         isOneToOne: false
         isSetofReturn: true
+      } },
+"settle_bill":
+{ Args: { "p_bill": Omit<Database["public"]['Tables']["transactions"]['Row'], Database["public"]['Tables']["transactions"]['ComputedFields']>,"p_method": string }; Returns: {
+              "amount_cents": number,
+"appointment_id": string | null,
+"cash_session_id": string | null,
+"category": string,
+"created_at": string,
+"created_by": string | null,
+"description": string | null,
+"due_date": string | null,
+"id": string,
+"method": string | null,
+"paid_at": string | null,
+"reverses_id": string | null,
+"salon_id": string,
+"status": string,
+"type": string,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "transactions"
+        isOneToOne: true
+        isSetofReturn: false
       } },
 "shares_salon_with":
 { Args: { "p_user_id": string }; Returns: boolean

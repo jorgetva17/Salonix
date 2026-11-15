@@ -22,6 +22,15 @@ const RPC_MESSAGES = new Set([
   "Produto sem preço de venda.",
   "Venda precisa de pelo menos um produto.",
   "Cliente não encontrado.",
+  "Categoria inválida.",
+  "Informe a descrição.",
+  "Valor inválido.",
+  "Informe o vencimento.",
+  "Forma de pagamento inválida.",
+  "Abra o caixa antes de pagar em dinheiro.",
+  "Conta não encontrada.",
+  "Conta não pode mudar deste status.",
+  "Período inválido.",
 ]);
 
 export function rpcError(message: string | undefined, fallback: string): string {
