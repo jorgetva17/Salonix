@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { addMonths, todayIn } from "@/lib/agenda/time";
+import { earningsSummary } from "@/lib/finance/earnings";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
@@ -34,7 +35,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const { data: rows, error } = await supabase
     .from("commissions")
     .select(
-      "id, appointment_id, reverses_id, professional_id, base_cents, percent, amount_cents, status, created_at, professionals(name), appointments(customers(name)), appointment_items(services(name))",
+      "id, appointment_id, reverses_id, professional_id, base_cents, percent, amount_cents, status, created_at, professionals(name), appointments(refunded_at, customers(name)), appointment_items(services(name))",
     )
     .eq("salon_id", salon.id)
     .eq("reference_month", `${month}-01`)
@@ -63,10 +64,9 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     else if (r.status === "paid") g.paid += r.amount_cents;
     g.rows.push(r);
   }
-  // Resumo do profissional: atendimentos e valor dos próprios serviços no mês, sem estornos.
-  const own = rows.filter((r) => r.status !== "reversed" && !r.reverses_id);
-  const myAppointments = new Set(own.map((r) => r.appointment_id)).size;
-  const myServicesCents = own.reduce((sum, r) => sum + r.base_cents, 0);
+  const { appointments: myAppointments, servicesCents: myServicesCents } = earningsSummary(
+    rows.map((r) => ({ ...r, refunded_at: r.appointments?.refunded_at ?? null })),
+  );
   const list = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const [year, monthNumber] = month.split("-").map(Number);
   const nav = (m: string) => `/financeiro?mes=${m}`;
