@@ -84,7 +84,15 @@ Rode `npm run db:reset` antes do E2E para recarregar os usuários de demonstraç
   alguém confirmar o Pix; no fechamento, o Pix pendente aparece fora do total conferido.
 - Atendimento pago não é editado: o admin estorna, o que gera lançamentos inversos (saída no
   caixa aberto, comissão estornada ou abatida no mês seguinte se já tinha sido paga).
-- Desconto é repartido entre os serviços em centavos inteiros, sem sobra nem falta de 1 centavo.
+- Desconto é repartido entre os itens (serviços e produtos) em centavos inteiros, sem sobra nem
+  falta de 1 centavo; a comissão sai só dos serviços.
+- Estoque: o saldo de cada item é derivado dos movimentos (entrada, saída, ajuste por contagem e
+  consumo) e ninguém o edita direto. Ao receber, o banco baixa o consumo configurado de cada
+  serviço e os produtos vendidos na mesma transação; o saldo pode ficar negativo (nunca impede o
+  recebimento) e aparece como alerta. O estorno devolve ao estoque o que saiu, uma vez só.
+- Venda no balcão: produtos sem serviço, com cliente opcional, recebida pelo mesmo caixa.
+- Equipamentos com responsável, status e histórico de manutenção; a tela avisa quando a próxima
+  manutenção está em até 7 dias ou atrasada.
 - Logos são convertidas para PNG no servidor e gravadas no bucket `salon-logos`
   apenas pelo servidor; o bucket é público só para leitura.
 

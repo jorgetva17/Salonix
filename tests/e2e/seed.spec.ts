@@ -76,3 +76,15 @@ test.describe("caixa e comissões de demonstração do seed", () => {
     await expect(page.getByTestId("commissions-Marcos").getByTestId("commission-available")).toHaveText("R$ 17,50");
   });
 });
+
+test.describe("estoque e equipamentos de demonstração do seed", () => {
+  test("recepção vê alertas de estoque e a manutenção próxima", async ({ page }) => {
+    await signIn(page, "recepcao@salonix.dev", "salonix123");
+    await expect(page).toHaveURL(/\/painel$/);
+    await page.goto("/estoque");
+    await expect(page.getByTestId("stock-item-Shampoo").getByTestId("stock-status")).toHaveText("Abaixo do mínimo");
+    await expect(page.getByTestId("stock-item-Pomada modeladora")).toContainText("R$ 35,00");
+    await page.goto("/estoque/equipamentos");
+    await expect(page.getByTestId("equipment-Máquina de corte").getByTestId("maintenance-status")).toHaveText("Manutenção próxima");
+  });
+});
