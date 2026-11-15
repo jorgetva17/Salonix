@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@/lib/cash/methods";
 import { localDayRange, todayIn } from "@/lib/agenda/time";
+import { TRANSACTION_CATEGORY_LABELS } from "@/lib/finance/bills";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
@@ -85,7 +86,7 @@ export default async function CashPage() {
     ? await Promise.all([
         supabase
           .from("transactions")
-          .select("id, type, category, method, status, amount_cents, created_at, appointments(kind, customers(name))")
+          .select("id, type, category, method, status, amount_cents, description, created_at, appointments(kind, customers(name))")
           .eq("cash_session_id", open.id)
           .order("created_at", { ascending: false }),
         // O esperado vem do banco: a recepção não lê as despesas de comissão.
@@ -231,7 +232,9 @@ export default async function CashPage() {
               {txs.map((t) => (
                 <li key={t.id} className="flex justify-between gap-3 py-2">
                   <span className="min-w-0 truncate">
-                    {t.type === "income" ? t.appointments && saleLabel(t.appointments) : t.category === "estorno" ? "Estorno" : "Comissão"}
+                    {t.type === "income"
+                      ? t.appointments && saleLabel(t.appointments)
+                      : [TRANSACTION_CATEGORY_LABELS[t.category], !["estorno", "comissao"].includes(t.category) && t.description].filter(Boolean).join(" · ")}
                     {t.method && ` · ${PAYMENT_METHOD_LABELS[t.method as PaymentMethod]}`}
                     {t.status === "pending" && " · a confirmar"}
                     {t.status === "reversed" && " · estornado"}

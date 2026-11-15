@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { PayCommissionsButton } from "./commissions-client";
+import { FinanceTabs } from "./tabs";
 
 export const metadata = { title: "Financeiro · Salonix" };
 
@@ -82,6 +83,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
           </Link>
         </div>
       </div>
+      {isAdmin && <FinanceTabs current="comissoes" />}
 
       {list.length === 0 ? (
         <EmptyState icon={TrendingUp} title="Nenhuma comissão neste mês" description="As comissões aparecem aqui quando um atendimento é recebido." />
