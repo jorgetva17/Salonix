@@ -2,6 +2,7 @@ import {
   BarChart3,
   Boxes,
   CalendarDays,
+  ListOrdered,
   Contact,
   LayoutDashboard,
   Scissors,
@@ -26,6 +27,7 @@ const ALL: SalonRole[] = ["admin", "reception", "professional"];
 const ITEMS: NavItem[] = [
   { href: "/painel", label: "Painel", icon: LayoutDashboard, roles: ALL, primary: true },
   { href: "/agenda", label: "Agenda", icon: CalendarDays, roles: ALL, primary: true },
+  { href: "/fila", label: "Fila", icon: ListOrdered, roles: ALL, primary: true },
   { href: "/caixa", label: "Caixa", icon: Wallet, roles: ["admin", "reception"], primary: true },
   { href: "/estoque", label: "Estoque", icon: Boxes, roles: ALL, primary: true },
   { href: "/financeiro", label: "Financeiro", icon: BarChart3, roles: ["admin", "professional"], primary: true },

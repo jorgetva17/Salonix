@@ -10,6 +10,7 @@ describe("navegação por perfil", () => {
     expect(l).not.toContain("Financeiro");
     expect(l).not.toContain("Configurações");
     expect(l).toContain("Caixa");
+    expect(l).toContain("Fila");
   });
 
   it("cadastros aparecem para todos os perfis", () => {
@@ -25,16 +26,16 @@ describe("navegação por perfil", () => {
     expect(l).not.toContain("Equipe");
   });
 
-  it("admin vê os 10 itens", () => {
-    expect(getNavItems("admin")).toHaveLength(10);
+  it("admin vê os 11 itens", () => {
+    expect(getNavItems("admin")).toHaveLength(11);
   });
 
   it("rodapé mobile mostra até 4 itens e o resto vai para 'Mais'", () => {
     const admin = getBottomNav("admin");
     expect(admin.main).toHaveLength(4);
-    expect(admin.more.map((i) => i.label)).toEqual(["Financeiro", "Clientes", "Serviços", "Profissionais", "Equipe", "Configurações"]);
+    expect(admin.more.map((i) => i.label)).toEqual(["Estoque", "Financeiro", "Clientes", "Serviços", "Profissionais", "Equipe", "Configurações"]);
     const pro = getBottomNav("professional");
     expect(pro.main).toHaveLength(4);
-    expect(pro.more.map((i) => i.label)).toEqual(["Clientes", "Serviços", "Profissionais"]);
+    expect(pro.more.map((i) => i.label)).toEqual(["Meus ganhos", "Clientes", "Serviços", "Profissionais"]);
   });
 });

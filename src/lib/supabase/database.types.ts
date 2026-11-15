@@ -5,6 +5,27 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type SalonRole = "admin" | "reception" | "professional";
+export type AppointmentKind = "scheduled" | "walk_in";
+export type AppointmentStatus = "scheduled" | "waiting" | "in_progress" | "awaiting_payment" | "paid" | "cancelled" | "no_show";
+export type AppointmentRow = {
+  id: string;
+  salon_id: string;
+  customer_id: string | null;
+  guest_name: string | null;
+  professional_id: string | null;
+  kind: AppointmentKind;
+  status: AppointmentStatus;
+  starts_at: string | null;
+  ends_at: string | null;
+  arrived_at: string | null;
+  started_at: string | null;
+  notes: string;
+  discount_cents: number;
+  total_cents: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 type Timestamps = { created_at: string; updated_at: string };
 
@@ -114,6 +135,37 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["customers"]["Row"]>;
         Relationships: [];
       };
+      appointments: {
+        Row: AppointmentRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      appointment_items: {
+        Row: {
+          id: string;
+          salon_id: string;
+          appointment_id: string;
+          item_type: "service" | "product";
+          service_id: string | null;
+          inventory_item_id: string | null;
+          description: string;
+          quantity: number;
+          unit_price_cents: number;
+          duration_minutes: number;
+          professional_id: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      appointment_events: {
+        Row: { id: string; salon_id: string; appointment_id: string; event_type: string; actor_id: string | null; data: Json; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       feature_flags: {
         Row: { salon_id: string; card_reconciliation: boolean; pix_webhook: boolean };
         Insert: { salon_id: string; card_reconciliation?: boolean; pix_webhook?: boolean };
@@ -136,10 +188,24 @@ export type Database = {
         Args: Record<string, never>;
         Returns: { id: string; salon_id: string; salon_name: string; role: SalonRole; created_at: string }[];
       };
+      create_appointment: {
+        Args: { p_salon_id: string; p_customer_id: string | null; p_guest_name: string | null; p_professional_id: string; p_starts_at: string; p_service_ids: string[]; p_notes?: string };
+        Returns: AppointmentRow;
+      };
+      enqueue_walk_in: {
+        Args: { p_salon_id: string; p_customer_id: string | null; p_guest_name: string | null; p_professional_id: string | null; p_service_ids: string[] };
+        Returns: AppointmentRow;
+      };
+      reschedule_appointment: { Args: { p_appointment_id: string; p_starts_at: string; p_professional_id?: string | null }; Returns: AppointmentRow };
+      cancel_appointment: { Args: { p_appointment_id: string; p_reason?: string }; Returns: AppointmentRow };
+      mark_no_show: { Args: { p_appointment_id: string }; Returns: AppointmentRow };
+      start_appointment: { Args: { p_appointment_id: string }; Returns: AppointmentRow };
+      call_next: { Args: { p_salon_id: string; p_professional_id: string }; Returns: AppointmentRow | null };
+      my_professional_id: { Args: { p_salon_id: string }; Returns: string | null };
       is_salon_member: { Args: { p_salon_id: string }; Returns: boolean };
       has_salon_role: { Args: { p_salon_id: string; p_roles: SalonRole[] }; Returns: boolean };
     };
-    Enums: { salon_role: SalonRole };
+    Enums: { salon_role: SalonRole; appointment_kind: AppointmentKind; appointment_status: AppointmentStatus };
     CompositeTypes: Record<string, never>;
   };
 };

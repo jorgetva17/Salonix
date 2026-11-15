@@ -53,8 +53,8 @@ select is((select ends_at - starts_at from public.create_appointment(current_set
   array['00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000e2']::uuid[])),
   interval '50 minutes', 'duração = soma dos serviços');
 reset role;
-select is((select total_cents from public.appointments where kind = 'scheduled' limit 1), 7500, 'total em centavos = soma dos preços');
-select is((select count(*)::int from public.appointment_items), 2, 'itens gravados com snapshot');
+select is((select total_cents from public.appointments where salon_id = current_setting('t.a')::uuid and kind = 'scheduled' limit 1), 7500, 'total em centavos = soma dos preços');
+select is((select count(*)::int from public.appointment_items where salon_id = current_setting('t.a')::uuid), 2, 'itens gravados com snapshot');
 
 -- 4: profissional não agenda
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a3');
@@ -104,7 +104,7 @@ select is((select count(*)::int from public.appointments), 0, 'admin de outro sa
 reset role;
 
 -- 12-14: reagendar e cancelar -------------------------------------------------------
-select set_config('t.appt', (select id::text from public.appointments where kind = 'scheduled' and starts_at = current_setting('t.d1')::timestamptz
+select set_config('t.appt', (select id::text from public.appointments where salon_id = current_setting('t.a')::uuid and kind = 'scheduled' and starts_at = current_setting('t.d1')::timestamptz
   and professional_id = '00000000-0000-0000-0000-0000000000f1'), true);
 
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
@@ -140,14 +140,14 @@ select throws_ok($$update public.appointments set status = 'paid'$$, '42501', nu
 reset role;
 
 -- fila de walk-in ---------------------------------------------------------------------------
-delete from public.appointments where kind = 'scheduled';
+delete from public.appointments where salon_id = current_setting('t.a')::uuid and kind = 'scheduled';
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
 set local role authenticated;
 select public.enqueue_walk_in(current_setting('t.a')::uuid, null, 'Primeiro', '00000000-0000-0000-0000-0000000000f2', array['00000000-0000-0000-0000-0000000000e1']::uuid[]);
 select public.enqueue_walk_in(current_setting('t.a')::uuid, null, 'Segundo', null, array['00000000-0000-0000-0000-0000000000e1']::uuid[]);
 select public.enqueue_walk_in(current_setting('t.a')::uuid, '00000000-0000-0000-0000-0000000000c1', null, null, array['00000000-0000-0000-0000-0000000000e2']::uuid[]);
 reset role;
-select is((select count(*)::int from public.appointments where status = 'waiting' and starts_at is null), 3, 'walk-in entra na fila sem reservar horário');
+select is((select count(*)::int from public.appointments where salon_id = current_setting('t.a')::uuid and status = 'waiting' and starts_at is null), 3, 'walk-in entra na fila sem reservar horário');
 
 -- profissional vê só a fila sem dono (Paulo não vê "Primeiro", que prefere Pedro)
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a3');
@@ -171,12 +171,12 @@ reset role;
 select is((select status::text from public.appointments where guest_name = 'Primeiro'), 'in_progress', 'chamado vira em atendimento');
 
 -- 29-31: início, no-show, histórico ------------------------------------------------------------
-select set_config('t.w', (select id::text from public.appointments where status = 'waiting'), true);
+select set_config('t.w', (select id::text from public.appointments where salon_id = current_setting('t.a')::uuid and status = 'waiting'), true);
 select pg_temp.claims('00000000-0000-0000-0000-0000000000a2');
 set local role authenticated;
 select is((select status::text from public.mark_no_show(current_setting('t.w')::uuid)), 'no_show', 'recepção marca no-show da fila');
 reset role;
-select is((select count(*)::int from public.appointment_events where event_type = 'called'), 2, 'chamadas ficam no histórico');
+select is((select count(*)::int from public.appointment_events where salon_id = current_setting('t.a')::uuid and event_type = 'called'), 2, 'chamadas ficam no histórico');
 
 insert into public.appointments (salon_id, guest_name, professional_id, kind, status, starts_at, ends_at)
 values (current_setting('t.a')::uuid, 'Agendado', '00000000-0000-0000-0000-0000000000f2', 'scheduled', 'scheduled',

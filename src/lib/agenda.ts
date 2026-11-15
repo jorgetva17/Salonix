@@ -90,3 +90,25 @@ export function findFreeSlots(input: {
   }
   return slots;
 }
+
+// ---------------------------------------------------------------------------
+// Apresentação
+// ---------------------------------------------------------------------------
+export const STATUS_LABELS: Record<string, string> = {
+  scheduled: "Agendado",
+  waiting: "Na fila",
+  in_progress: "Em atendimento",
+  awaiting_payment: "Aguardando pagamento",
+  paid: "Pago",
+  cancelled: "Cancelado",
+  no_show: "Faltou",
+};
+
+/** Soma/subtrai dias de uma data "YYYY-MM-DD". */
+export function shiftDate(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+export const isValidDate = (value: unknown): value is string =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
