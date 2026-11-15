@@ -22,7 +22,7 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   echo "migration: $(basename "$f")"
   $PSQL -d salonix_test -f "$f" >/dev/null
 done
-if [ -f "$ROOT/supabase/seed.sql" ] && [ "${WITH_SEED:-0}" = 1 ]; then
+if [ -f "$ROOT/supabase/seed.sql" ] && [ "${WITH_SEED:-1}" = 1 ]; then
   $PSQL -d salonix_test -f "$ROOT/supabase/seed.sql" >/dev/null
 fi
 pg_prove -h /tmp -p "$PORT" -U postgres -d salonix_test "$ROOT"/supabase/tests/*.test.sql

@@ -5,7 +5,7 @@ export function AuthCard({ title, description, children }: { title: string; desc
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-8">
       <div className="w-full max-w-md space-y-6">
-        <BrandLogo className="mx-auto h-24 w-auto" />
+        <BrandLogo className="mx-auto h-auto max-h-24 w-auto max-w-64 object-contain" />
         <Card>
           <CardHeader>
             <CardTitle className="text-xl">{title}</CardTitle>
