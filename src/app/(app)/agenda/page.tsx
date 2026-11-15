@@ -48,7 +48,13 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const to = localDayRange(rangeEnd, tz).to;
 
   const ids = view === "dia" ? professionals.map((p) => p.id) : [selectedId];
-  const [{ data: appointments, error: e1 }, { data: schedules, error: e2 }, { data: blocks, error: e3 }, { data: services, error: e4 }] =
+  const [
+    { data: appointments, error: e1 },
+    { data: schedules, error: e2 },
+    { data: blocks, error: e3 },
+    { data: services, error: e4 },
+    { data: products, error: e5 },
+  ] =
     await Promise.all([
       supabase
         .from("appointments")
@@ -63,8 +69,16 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
       supabase.from("schedule_blocks").select("professional_id, starts_at, ends_at").in("professional_id", ids).lt("starts_at", to).gt("ends_at", from),
       // Todos os perfis: o profissional também adiciona serviço no próprio atendimento.
       supabase.from("services").select("id, name, duration_minutes, price_cents").eq("salon_id", salon.id).eq("active", true).order("name"),
+      // Itens vendáveis: ativos e com preço de venda.
+      supabase
+        .from("inventory_items")
+        .select("id, name, sale_price_cents")
+        .eq("salon_id", salon.id)
+        .eq("active", true)
+        .not("sale_price_cents", "is", null)
+        .order("name"),
     ]);
-  if (e1 || e2 || e3 || e4) throw e1 ?? e2 ?? e3 ?? e4;
+  if (e1 || e2 || e3 || e4 || e5) throw e1 ?? e2 ?? e3 ?? e4 ?? e5;
 
   const toAgenda = (a: (typeof appointments)[number], day: string): AgendaAppointment => ({
     id: a.id,
@@ -76,7 +90,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     kind: a.kind,
     customerName: a.customers?.name ?? "",
     customerPhone: a.customers?.phone ?? null,
-    services: a.appointment_items.map((i) => i.services?.name ?? ""),
+    services: a.appointment_items.flatMap((i) => (i.services ? [i.services.name] : [])),
     totalCents: a.total_cents,
   });
 
@@ -199,6 +213,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
         myProfessionalId={myProfessionalId ?? null}
         professionals={professionals}
         services={services}
+        products={products.map((p) => ({ id: p.id, name: p.name, price_cents: p.sale_price_cents ?? 0 }))}
       >
         {body}
       </AppointmentSheetProvider>

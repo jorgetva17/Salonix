@@ -7,6 +7,7 @@ import { formatBRL, formatDateTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { CloseCashForm, ConfirmPixButton, OpenCashForm } from "./cash-client";
+import { CounterSaleButton } from "./counter-sale";
 import { PaymentDialog } from "./payment-dialog";
 
 export const metadata = { title: "Caixa · Salonix" };
@@ -25,7 +26,13 @@ export default async function CashPage() {
   const tz = salon.timezone;
   const supabase = await createServerClient();
 
-  const [{ data: open, error: e1 }, { data: closed, error: e2 }, { data: awaiting, error: e4 }, { data: pixPending, error: e5 }] = await Promise.all([
+  const [
+    { data: open, error: e1 },
+    { data: closed, error: e2 },
+    { data: awaiting, error: e4 },
+    { data: pixPending, error: e5 },
+    { data: products, error: e7 },
+  ] = await Promise.all([
     supabase.from("cash_sessions").select("id, opened_at, opening_cents").eq("salon_id", salon.id).is("closed_at", null).maybeSingle(),
     supabase
       .from("cash_sessions")
@@ -36,27 +43,37 @@ export default async function CashPage() {
       .limit(5),
     supabase
       .from("appointments")
-      .select("id, total_cents, starts_at, customers(name), professionals(name)")
+      .select("id, kind, total_cents, starts_at, arrived_at, customers(name), professionals(name)")
       .eq("salon_id", salon.id)
       .eq("status", "awaiting_payment")
-      .order("starts_at"),
+      .order("starts_at", { nullsFirst: false })
+      .order("arrived_at"),
     // Pix pendente de qualquer sessão: a confirmação pode vir depois do fechamento.
     supabase
       .from("transactions")
-      .select("id, amount_cents, created_at, appointments(customers(name))")
+      .select("id, amount_cents, created_at, appointments(kind, customers(name))")
       .eq("salon_id", salon.id)
       .eq("type", "income")
       .eq("method", "pix")
       .eq("status", "pending")
       .order("created_at"),
+    supabase
+      .from("inventory_items")
+      .select("id, name, sale_price_cents")
+      .eq("salon_id", salon.id)
+      .eq("active", true)
+      .not("sale_price_cents", "is", null)
+      .order("name"),
   ]);
-  if (e1 || e2 || e4 || e5) throw e1 ?? e2 ?? e4 ?? e5;
+  if (e1 || e2 || e4 || e5 || e7) throw e1 ?? e2 ?? e4 ?? e5 ?? e7;
+  const saleLabel = (a: { kind: string; customers: { name: string } | null }) =>
+    a.customers?.name ?? (a.kind === "sale" ? "Venda no balcão" : "");
 
   const [{ data: txs, error: e3 }, { data: expectedJson, error: e6 }] = open
     ? await Promise.all([
         supabase
           .from("transactions")
-          .select("id, type, category, method, status, amount_cents, created_at, appointments(customers(name))")
+          .select("id, type, category, method, status, amount_cents, created_at, appointments(kind, customers(name))")
           .eq("cash_session_id", open.id)
           .order("created_at", { ascending: false }),
         // O esperado vem do banco: a recepção não lê as despesas de comissão.
@@ -72,7 +89,10 @@ export default async function CashPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-20 md:pb-0">
       <RealtimeRefresh salonId={salon.id} />
-      <h1 className="text-2xl font-semibold">Caixa</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Caixa</h1>
+        <CounterSaleButton products={products.map((p) => ({ id: p.id, name: p.name, priceCents: p.sale_price_cents ?? 0 }))} />
+      </div>
 
       {!open || !summary ? (
         <Card>
@@ -125,13 +145,13 @@ export default async function CashPage() {
               {awaiting.map((a) => (
                 <li key={a.id} className="flex items-center gap-3 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{a.customers?.name}</p>
+                    <p className="truncate font-medium">{saleLabel(a)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {a.professionals?.name} · {formatBRL(a.total_cents)}
+                      {a.kind === "sale" ? "Venda no balcão" : a.professionals?.name} · {formatBRL(a.total_cents)}
                     </p>
                   </div>
                   <PaymentDialog
-                    appointment={{ id: a.id, customerName: a.customers?.name ?? "", totalCents: a.total_cents }}
+                    appointment={{ id: a.id, customerName: saleLabel(a), totalCents: a.total_cents }}
                     cashOpen={Boolean(open)}
                   />
                 </li>
@@ -151,7 +171,7 @@ export default async function CashPage() {
               {pixPending.map((t) => (
                 <li key={t.id} className="flex items-center gap-3 py-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{t.appointments?.customers?.name}</p>
+                    <p className="truncate font-medium">{t.appointments && saleLabel(t.appointments)}</p>
                     <p className="text-sm text-muted-foreground">
                       {formatBRL(t.amount_cents)} · {formatDateTime(t.created_at, tz)}
                     </p>
@@ -174,7 +194,7 @@ export default async function CashPage() {
               {txs.map((t) => (
                 <li key={t.id} className="flex justify-between gap-3 py-2">
                   <span className="min-w-0 truncate">
-                    {t.type === "income" ? t.appointments?.customers?.name : t.category === "estorno" ? "Estorno" : "Comissão"}
+                    {t.type === "income" ? t.appointments && saleLabel(t.appointments) : t.category === "estorno" ? "Estorno" : "Comissão"}
                     {t.method && ` · ${PAYMENT_METHOD_LABELS[t.method as PaymentMethod]}`}
                     {t.status === "pending" && " · a confirmar"}
                     {t.status === "reversed" && " · estornado"}

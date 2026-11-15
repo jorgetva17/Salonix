@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { firstErrors } from "@/lib/validation/auth";
 import { closeCashSchema, openCashSchema, paymentSchema } from "@/lib/validation/cash";
+import { counterSaleSchema } from "@/lib/validation/inventory";
 
 export async function openCashSession(_prev: FormState, formData: FormData): Promise<FormState> {
   const { salon } = await requireRole(["admin", "reception"]);
@@ -85,4 +86,23 @@ export async function confirmPix(transactionId: string): Promise<ActionResult> {
   if (error) return { ok: false, error: rpcError(error.message, "Não foi possível confirmar o Pix.") };
   revalidatePath("/caixa");
   return { ok: true };
+}
+
+export async function createCounterSale(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { salon } = await requireRole(["admin", "reception"]);
+  const parsed = counterSaleSchema.safeParse({
+    customerId: formData.get("customerId") ?? "",
+    items: formData.get("items") ?? "[]",
+  });
+  if (!parsed.success) return { ok: false, error: "Revise os produtos da venda.", fieldErrors: firstErrors(parsed) };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("create_counter_sale", {
+    p_salon_id: salon.id,
+    // Sem cliente vai null explícito (o tipo gerado não marca o parâmetro como nulável).
+    p_customer_id: parsed.data.customerId as string,
+    p_items: parsed.data.items.map((i) => ({ inventory_item_id: i.inventoryItemId, quantity: i.quantity })),
+  });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível criar a venda.") };
+  revalidatePath("/caixa");
+  return { ok: true, message: "Venda criada. Receba em Aguardando pagamento." };
 }

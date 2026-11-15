@@ -51,14 +51,14 @@ isOneToOne: false
                   ]
                 },"appointment_items": {
                   Row: {
-                    "appointment_id": string,"created_at": string,"duration_minutes": number,"id": string,"item_type": string,"professional_id": string | null,"quantity": number,"salon_id": string,"service_id": string,"unit_price_cents": number
+                    "appointment_id": string,"created_at": string,"duration_minutes": number,"id": string,"inventory_item_id": string | null,"item_type": string,"professional_id": string | null,"quantity": number,"salon_id": string,"service_id": string | null,"unit_price_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appointment_id": string,"created_at"?: string,"duration_minutes": number,"id"?: string,"item_type": string,"professional_id"?: string | null,"quantity"?: number,"salon_id": string,"service_id": string,"unit_price_cents": number
+                    "appointment_id": string,"created_at"?: string,"duration_minutes": number,"id"?: string,"inventory_item_id"?: string | null,"item_type": string,"professional_id"?: string | null,"quantity"?: number,"salon_id": string,"service_id"?: string | null,"unit_price_cents": number
                   }
                   Update: {
-                    "appointment_id"?: string,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"item_type"?: string,"professional_id"?: string | null,"quantity"?: number,"salon_id"?: string,"service_id"?: string,"unit_price_cents"?: number
+                    "appointment_id"?: string,"created_at"?: string,"duration_minutes"?: number,"id"?: string,"inventory_item_id"?: string | null,"item_type"?: string,"professional_id"?: string | null,"quantity"?: number,"salon_id"?: string,"service_id"?: string | null,"unit_price_cents"?: number
                   }
                   Relationships: [
                     {
@@ -66,6 +66,12 @@ isOneToOne: false
       columns: ["appointment_id","salon_id"]
 isOneToOne: false
       referencedRelation: "appointments"
+      referencedColumns: ["id","salon_id"]
+    },{
+      foreignKeyName: "appointment_items_inventory_item_id_salon_id_fkey"
+      columns: ["inventory_item_id","salon_id"]
+isOneToOne: false
+      referencedRelation: "inventory_items"
       referencedColumns: ["id","salon_id"]
     },{
       foreignKeyName: "appointment_items_professional_id_salon_id_fkey"
@@ -89,14 +95,14 @@ isOneToOne: false
                   ]
                 },"appointments": {
                   Row: {
-                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"refunded_at": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
+                    "arrived_at": string | null,"created_at": string,"created_by": string | null,"customer_id": string | null,"discount_cents": number,"duration_minutes": number,"ends_at": string | null,"id": string,"kind": string,"notes": string | null,"professional_id": string | null,"refunded_at": string | null,"salon_id": string,"starts_at": string | null,"status": string,"total_cents": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id": string,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes": number,"ends_at"?: string | null,"id"?: string,"kind": string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id": string,"starts_at"?: string | null,"status": string,"total_cents": number,"updated_at"?: string
                   }
                   Update: {
-                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
+                    "arrived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"customer_id"?: string | null,"discount_cents"?: number,"duration_minutes"?: number,"ends_at"?: string | null,"id"?: string,"kind"?: string,"notes"?: string | null,"professional_id"?: string | null,"refunded_at"?: string | null,"salon_id"?: string,"starts_at"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -571,11 +577,32 @@ isOneToOne: false
 "created_at": string,
 "duration_minutes": number,
 "id": string,
+"inventory_item_id": string | null,
 "item_type": string,
 "professional_id": string | null,
 "quantity": number,
 "salon_id": string,
-"service_id": string,
+"service_id": string | null,
+"unit_price_cents": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointment_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"add_product_item":
+{ Args: { "p_appointment_id": string,"p_inventory_item_id": string,"p_quantity"?: number }; Returns: {
+              "appointment_id": string,
+"created_at": string,
+"duration_minutes": number,
+"id": string,
+"inventory_item_id": string | null,
+"item_type": string,
+"professional_id": string | null,
+"quantity": number,
+"salon_id": string,
+"service_id": string | null,
 "unit_price_cents": number
             }
                           SetofOptions: {
@@ -595,7 +622,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -627,7 +654,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -683,7 +710,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -734,7 +761,33 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_counter_sale":
+{ Args: { "p_customer_id": string,"p_items": Json,"p_salon_id": string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -802,7 +855,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -826,6 +879,26 @@ isOneToOne: false
 "has_salon_role":
 { Args: { "p_roles": (Database["public"]['Enums']["salon_role"])[],"p_salon_id": string }; Returns: boolean
                            },
+"insert_product_item":
+{ Args: { "p_appt": Omit<Database["public"]['Tables']["appointments"]['Row'], Database["public"]['Tables']["appointments"]['ComputedFields']>,"p_inventory_item_id": string,"p_quantity": number }; Returns: {
+              "appointment_id": string,
+"created_at": string,
+"duration_minutes": number,
+"id": string,
+"inventory_item_id": string | null,
+"item_type": string,
+"professional_id": string | null,
+"quantity": number,
+"salon_id": string,
+"service_id": string | null,
+"unit_price_cents": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointment_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "insert_service_items":
 { Args: { "p_appointment_id": string,"p_salon_id": string,"p_service_ids": (string)[] }; Returns: undefined
                            },
@@ -840,7 +913,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -866,7 +939,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -892,7 +965,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -953,7 +1026,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -979,7 +1052,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1026,7 +1099,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1052,7 +1125,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1078,7 +1151,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1104,7 +1177,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1178,7 +1251,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,
@@ -1204,7 +1277,7 @@ isOneToOne: false
               "arrived_at": string | null,
 "created_at": string,
 "created_by": string | null,
-"customer_id": string,
+"customer_id": string | null,
 "discount_cents": number,
 "duration_minutes": number,
 "ends_at": string | null,

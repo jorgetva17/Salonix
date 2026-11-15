@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inventoryItemSchema, movementSchema } from "@/lib/validation/inventory";
+import { counterSaleSchema, inventoryItemSchema, movementSchema } from "@/lib/validation/inventory";
 
 const item = { name: "Pomada", unit: "un", minQuantity: "5", unitCost: "12,00", salePrice: "35,00" };
 
@@ -49,5 +49,25 @@ describe("movementSchema", () => {
   it("entrada com custo e motivo", () => {
     const r = movementSchema.parse({ itemId: crypto.randomUUID(), type: "in", quantity: "2,5", unitCost: "3,00", reason: " compra " });
     expect(r).toMatchObject({ quantity: 2.5, unitCostCents: 300, reason: "compra" });
+  });
+});
+
+describe("counterSaleSchema", () => {
+  const id = crypto.randomUUID();
+  it("cliente opcional e linhas com quantidade inteira", () => {
+    expect(counterSaleSchema.parse({ customerId: "", items: JSON.stringify([{ inventoryItemId: id, quantity: 2 }]) })).toEqual({
+      customerId: null,
+      items: [{ inventoryItemId: id, quantity: 2 }],
+    });
+  });
+
+  it("sem linhas", () => {
+    const r = counterSaleSchema.safeParse({ customerId: "", items: "[]" });
+    expect(r.error?.issues[0].message).toBe("Adicione pelo menos um produto");
+  });
+
+  it("quantidade fracionada", () => {
+    const r = counterSaleSchema.safeParse({ items: JSON.stringify([{ inventoryItemId: id, quantity: 1.5 }]) });
+    expect(r.success).toBe(false);
   });
 });

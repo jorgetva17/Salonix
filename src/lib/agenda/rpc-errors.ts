@@ -21,6 +21,7 @@ const RPC_MESSAGES = new Set([
   "Quantidade inválida.",
   "Produto sem preço de venda.",
   "Venda precisa de pelo menos um produto.",
+  "Cliente não encontrado.",
 ]);
 
 export function rpcError(message: string | undefined, fallback: string): string {

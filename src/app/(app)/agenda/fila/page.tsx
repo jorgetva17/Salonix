@@ -74,7 +74,7 @@ export default async function QueuePage() {
     nowIso,
   );
   const nameOf = new Map(professionals.map((p) => [p.id, p.name]));
-  const serviceNames = (items: { services: { name: string } | null }[]) => items.map((i) => i.services?.name ?? "").join(" + ");
+  const serviceNames = (items: { services: { name: string } | null }[]) => items.flatMap((i) => (i.services ? [i.services.name] : [])).join(" + ");
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-20 md:pb-0">

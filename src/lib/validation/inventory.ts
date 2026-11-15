@@ -65,3 +65,28 @@ export const movementSchema = z
   // Entrada e saída precisam de quantidade; o ajuste é a contagem (pode ser 0).
   .refine((m) => m.type === "adjust" || m.quantity > 0, { error: quantityError, path: ["quantity"] })
   .transform(({ unitCost, ...rest }) => ({ ...rest, unitCostCents: unitCost }));
+
+const saleLine = z.object({
+  inventoryItemId: z.uuid({ error: "Escolha o produto" }),
+  quantity: z.number().int({ error: "Quantidade inválida" }).min(1, { error: "Quantidade inválida" }).max(1000, { error: "Quantidade inválida" }),
+});
+
+/** Venda no balcão: cliente opcional e linhas (JSON) de produto + quantidade. */
+export const counterSaleSchema = z.object({
+  customerId: z
+    .string()
+    .optional()
+    .transform((v) => v || null)
+    .pipe(z.uuid().nullable()),
+  items: z
+    .string()
+    .transform((v, ctx) => {
+      try {
+        return JSON.parse(v) as unknown;
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Adicione pelo menos um produto" });
+        return z.NEVER;
+      }
+    })
+    .pipe(z.array(saleLine).min(1, { error: "Adicione pelo menos um produto" })),
+});

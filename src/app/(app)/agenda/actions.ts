@@ -83,7 +83,8 @@ export type AppointmentDetails = {
   totalCents: number;
   discountCents: number;
   refundedAt: string | null;
-  items: { id: string; serviceName: string; unitPriceCents: number; quantity: number }[];
+  /** serviceName: nome do serviço, ou "{produto} × {qtd}" num item de produto. */
+  items: { id: string; itemType: "service" | "product"; serviceName: string; unitPriceCents: number; quantity: number }[];
   /** Entradas do recebimento (vazio para quem não lê transações, como o profissional). */
   payments: { method: string | null; amountCents: number; status: string }[];
   events: { event: string; at: string; actorName: string | null; reason: string | null }[];
@@ -98,7 +99,7 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
     supabase.from("appointment_events").select("event, actor, data, created_at").eq("appointment_id", id).order("created_at"),
     supabase
       .from("appointment_items")
-      .select("id, unit_price_cents, quantity, services(name)")
+      .select("id, item_type, unit_price_cents, quantity, services(name), inventory_items(name)")
       .eq("appointment_id", id)
       .order("created_at"),
     supabase
@@ -122,7 +123,8 @@ export async function getAppointmentDetails(id: string): Promise<AppointmentDeta
     refundedAt: appointment.refunded_at,
     items: (items ?? []).map((i) => ({
       id: i.id,
-      serviceName: i.services?.name ?? "",
+      itemType: i.item_type === "product" ? ("product" as const) : ("service" as const),
+      serviceName: i.item_type === "product" ? `${i.inventory_items?.name ?? ""} × ${i.quantity}` : (i.services?.name ?? ""),
       unitPriceCents: i.unit_price_cents,
       quantity: i.quantity,
     })),
@@ -185,12 +187,30 @@ export async function addAppointmentItem(appointmentId: string, serviceId: strin
   return { ok: true };
 }
 
+export async function addProductItem(appointmentId: string, inventoryItemId: string, quantity: number): Promise<ActionResult> {
+  await requireRole();
+  if (!uuid.safeParse(appointmentId).success || !uuid.safeParse(inventoryItemId).success) {
+    return { ok: false, error: "Escolha um produto." };
+  }
+  if (!Number.isInteger(quantity) || quantity < 1) return { ok: false, error: "Quantidade inválida." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("add_product_item", {
+    p_appointment_id: appointmentId,
+    p_inventory_item_id: inventoryItemId,
+    p_quantity: quantity,
+  });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível adicionar o produto.") };
+  revalidatePath("/agenda");
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
 export async function removeAppointmentItem(itemId: string): Promise<ActionResult> {
   await requireRole();
-  if (!uuid.safeParse(itemId).success) return { ok: false, error: "Serviço inválido." };
+  if (!uuid.safeParse(itemId).success) return { ok: false, error: "Item inválido." };
   const supabase = await createServerClient();
   const { error } = await supabase.rpc("remove_appointment_item", { p_item_id: itemId });
-  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível remover o serviço.") };
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível remover o item.") };
   revalidatePath("/agenda");
   revalidatePath("/caixa");
   return { ok: true };
@@ -253,7 +273,7 @@ export async function callNextWalkIn(professionalId: string): Promise<ActionResu
   const supabase = await createServerClient();
   const { data, error } = await supabase.rpc("call_next_walk_in", { p_salon_id: salon.id, p_professional_id: professionalId });
   if (error) return { ok: false, error: rpcError(error.message, "Não foi possível chamar o próximo.") };
-  const { data: customer } = await supabase.from("customers").select("name").eq("id", data.customer_id).maybeSingle();
+  const { data: customer } = await supabase.from("customers").select("name").eq("id", data.customer_id ?? "").maybeSingle();
   revalidatePath("/agenda/fila");
   return { ok: true, data: { customerName: customer?.name ?? "" } };
 }

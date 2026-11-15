@@ -17,6 +17,7 @@ import {
   cancelAppointment,
   completeAppointment,
   addAppointmentItem,
+  addProductItem,
   getAppointmentDetails,
   markNoShow,
   removeAppointmentItem,
@@ -38,6 +39,8 @@ type SheetContext = {
   myProfessionalId: string | null;
   professionals: ProfessionalOption[];
   services: { id: string; name: string; price_cents: number }[];
+  /** Itens de estoque vendáveis (preço de venda em price_cents). */
+  products: { id: string; name: string; price_cents: number }[];
 };
 
 const OpenContext = createContext<(a: AgendaAppointment) => void>(() => {});
@@ -155,7 +158,7 @@ function AppointmentDetail({
       </dl>
 
       {canAdjust && details && mode === "view" && (
-        <ItemsEditor details={details} appointmentId={a.id} services={ctx.services} onChanged={reload} />
+        <ItemsEditor details={details} appointmentId={a.id} services={ctx.services} products={ctx.products} onChanged={reload} />
       )}
 
       {mode === "view" && details && (
@@ -298,20 +301,27 @@ function ItemsEditor({
   details,
   appointmentId,
   services,
+  products,
   onChanged,
 }: {
   details: AppointmentDetails;
   appointmentId: string;
   services: SheetContext["services"];
+  products: SheetContext["products"];
   onChanged: () => void;
 }) {
   const [serviceId, setServiceId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [productQty, setProductQty] = useState("1");
   const [pending, startTransition] = useTransition();
+  const serviceCount = details.items.filter((i) => i.itemType === "service").length;
   const act = (fn: () => Promise<ActionResult>) =>
     startTransition(async () => {
       const result = await fn();
       if (result.ok) {
         setServiceId("");
+        setProductId("");
+        setProductQty("1");
         onChanged();
       } else {
         toast.error(result.error);
@@ -319,14 +329,15 @@ function ItemsEditor({
     });
 
   return (
-    <section aria-label="Serviços do atendimento" className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold">Serviços</h3>
+    <section aria-label="Itens do atendimento" className="flex flex-col gap-2">
+      <h3 className="text-sm font-semibold">Itens</h3>
       <ul className="divide-y rounded-lg border" data-testid="appointment-items">
         {details.items.map((item) => (
           <li key={item.id} className="flex min-h-11 items-center gap-2 px-3">
             <span className="flex-1 truncate">{item.serviceName}</span>
             <span className="text-sm tabular-nums">{formatBRL(item.unitPriceCents * item.quantity)}</span>
-            {details.items.length > 1 && (
+            {/* O último serviço fica; produto sempre pode sair. */}
+            {(item.itemType === "product" || serviceCount > 1) && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -365,6 +376,42 @@ function ItemsEditor({
           Adicionar
         </Button>
       </div>
+      {products.length > 0 && (
+        <div className="flex gap-2">
+          <select
+            aria-label="Produto para adicionar"
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+            className={cn(selectClass, "min-w-0 flex-1")}
+          >
+            <option value="">Adicionar produto…</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {formatBRL(p.price_cents)}
+              </option>
+            ))}
+          </select>
+          <Input
+            aria-label="Quantidade do produto"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            value={productQty}
+            onChange={(e) => setProductQty(e.target.value)}
+            className="h-11 w-16 text-base"
+          />
+          <Button
+            variant="outline"
+            className="h-11"
+            aria-label="Adicionar produto"
+            disabled={!productId || pending}
+            onClick={() => act(() => addProductItem(appointmentId, productId, Number(productQty)))}
+          >
+            {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
