@@ -1,6 +1,6 @@
 begin;
 set local search_path to public, extensions;
-select plan(9);
+select plan(10);
 
 select is((select count(*)::int from public.salon_members m join public.salons s on s.id = m.salon_id where s.slug = 'barbearia-demo'),
   3, 'seed cria 3 membros no salão demo');
@@ -15,6 +15,8 @@ select is((select count(*)::int from public.appointments where status = 'schedul
 
 select is((select count(*)::int from public.inventory_items where quantity <= min_quantity), 1, 'seed deixa 1 item abaixo do mínimo (alerta)');
 select is((select count(*)::int from public.equipment), 1, 'seed cria 1 equipamento');
+
+select is((select count(*)::int from public.transactions where type = 'expense' and status = 'pending' and due_date < current_date), 1, 'seed deixa 1 conta vencida');
 
 select * from finish();
 rollback;

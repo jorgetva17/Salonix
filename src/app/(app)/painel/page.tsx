@@ -16,10 +16,15 @@ export default async function PainelPage() {
   const supabase = await createServerClient();
   const today = isoToZonedLocal(new Date().toISOString(), active.salon.timezone || DEFAULT_TIMEZONE).slice(0, 10);
 
-  const [{ data: items }, { data: maintenance }] = await Promise.all([
+  const isAdmin = active.membership.role === "admin";
+  const [{ data: items }, { data: maintenance }, { data: overdue }] = await Promise.all([
     supabase.from("inventory_items").select("id, name, quantity, min_quantity").eq("active", true),
     supabase.from("equipment_maintenance").select("equipment_id, next_due_on").not("next_due_on", "is", null),
+    isAdmin
+      ? supabase.from("transactions").select("id").eq("type", "expense").eq("status", "pending").lt("due_date", today)
+      : Promise.resolve({ data: [] as { id: string }[] }),
   ]);
+  const overdueCount = (overdue ?? []).length;
   const stockAlerts = (items ?? []).filter((i) => stockStatus(i.quantity, i.min_quantity) !== "ok");
   const latestDue = new Map<string, string>();
   for (const m of maintenance ?? []) {
@@ -37,13 +42,14 @@ export default async function PainelPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">Use o menu para acessar a agenda, a fila, o caixa e o estoque.</CardContent>
       </Card>
-      {stockAlerts.length > 0 || maintenanceAlerts > 0 ? (
+      {stockAlerts.length > 0 || maintenanceAlerts > 0 || overdueCount > 0 ? (
         <Card role="alert" className="border-accent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-accent" aria-hidden /> Alertas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             {stockAlerts.length > 0 ? <p><Link href="/estoque" className="font-medium text-primary underline">{stockAlerts.length} item(ns) com estoque baixo, zerado ou negativo</Link></p> : null}
+            {overdueCount > 0 ? <p><Link href="/financeiro/contas" className="font-medium text-primary underline">{overdueCount} conta(s) a pagar vencida(s)</Link></p> : null}
             {maintenanceAlerts > 0 ? <p><Link href="/estoque/equipamentos" className="font-medium text-primary underline">{maintenanceAlerts} equipamento(s) com manutenção vencida ou próxima</Link></p> : null}
           </CardContent>
         </Card>

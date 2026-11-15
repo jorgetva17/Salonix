@@ -132,3 +132,13 @@ begin
   insert into public.equipment_maintenance (salon_id, equipment_id, performed_on, description, next_due_on)
   values (v_salon, '5a10a000-0000-4000-8000-0000000000f1', current_date - 90, 'Troca de lâmina e lubrificação', current_date + 3);
 end $$;
+
+-- Contas a pagar de demonstração (uma vencida, uma a vencer, uma já paga)
+insert into public.transactions (salon_id, type, category, description, amount_cents, payment_method, status, due_date, paid_at)
+select '5a10a000-0000-4000-8000-000000000001', 'expense', v.cat, v.descr, v.amount, v.method::public.payment_method, v.status, v.due, v.paid
+from (values
+  ('energia', 'Conta de energia', 38000, null, 'pending', current_date - 2, null::timestamptz),
+  ('aluguel', 'Aluguel do salão', 250000, null, 'pending', current_date + 5, null::timestamptz),
+  ('internet', 'Internet fibra', 12000, 'pix', 'paid', current_date - 10, now() - interval '10 days')
+) as v(cat, descr, amount, method, status, due, paid)
+where not exists (select 1 from public.transactions where type = 'expense');

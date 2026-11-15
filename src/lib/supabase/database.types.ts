@@ -2,6 +2,28 @@
  * Tipos do banco. Regerar com `npm run db:types` quando o Supabase local estiver
  * rodando. (Versão inicial escrita à mão a partir das migrations da Fase 1.)
  */
+export type FinancialReport = {
+  period: { from: string; to: string };
+  revenue_cents: number;
+  appointments_count: number;
+  avg_ticket_cents: number;
+  discount_cents: number;
+  pending_pix_cents: number;
+  refunds_cents: number;
+  by_day: { date: string; revenue_cents: number; count: number }[];
+  by_method: { method: PaymentMethod; cents: number }[];
+  by_service: { name: string; count: number; cents: number }[];
+  products_cents: number;
+  by_professional: { professional_id: string | null; name: string | null; count: number; cents: number }[];
+  materials_cost_cents: number;
+  cost_per_appointment_cents: number;
+  commissions_cents: number;
+  expenses_cents: number;
+  expenses_by_category: { category: string; cents: number }[];
+  payable_pending_cents: number;
+  payable_overdue_cents: number;
+  result_cents: number;
+};
 export type CashAmounts = { cash: number; debit: number; credit: number; pix: number; pending_pix?: number };
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -319,6 +341,10 @@ export type Database = {
       record_stock_movement: { Args: { p_item_id: string; p_type: string; p_quantity: number; p_reason?: string; p_unit_cost_cents?: number | null }; Returns: Database["public"]["Tables"]["inventory_items"]["Row"] };
       add_product_item: { Args: { p_appointment_id: string; p_inventory_item_id: string; p_quantity?: number }; Returns: AppointmentRow };
       create_counter_sale: { Args: { p_salon_id: string; p_customer_id: string | null; p_guest_name: string | null; p_inventory_item_id: string; p_quantity: number }; Returns: AppointmentRow };
+      create_expense: { Args: { p_salon_id: string; p_category: string; p_description: string; p_amount_cents: number; p_due_date: string | null; p_paid?: boolean; p_method?: PaymentMethod | null }; Returns: Database["public"]["Tables"]["transactions"]["Row"] };
+      pay_expense: { Args: { p_transaction_id: string; p_method: PaymentMethod; p_paid_on?: string | null }; Returns: Database["public"]["Tables"]["transactions"]["Row"] };
+      delete_expense: { Args: { p_transaction_id: string }; Returns: undefined };
+      financial_report: { Args: { p_salon_id: string; p_from: string; p_to: string }; Returns: FinancialReport };
       is_salon_member: { Args: { p_salon_id: string }; Returns: boolean };
       has_salon_role: { Args: { p_salon_id: string; p_roles: SalonRole[] }; Returns: boolean };
     };
