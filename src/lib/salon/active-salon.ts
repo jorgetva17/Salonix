@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Database, SalonRole } from "@/lib/supabase/database.types";
 
-export const ACTIVE_SALON_COOKIE = "salonix_salon";
+import { ACTIVE_SALON_COOKIE } from "./cookie";
+
+export { ACTIVE_SALON_COOKIE };
 
 export type Membership = { salonId: string; role: SalonRole; salonName: string };
 export type Salon = Database["public"]["Tables"]["salons"]["Row"];
