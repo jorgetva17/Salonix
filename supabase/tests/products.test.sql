@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(25);
 
 create schema t;
 create function t.create_user(p_email text) returns uuid language sql as $$
@@ -124,6 +124,21 @@ select t.login((select v from ids where k='rec'));
 insert into ids select 's2', t.sale(t.lines(1));
 select throws_ok($$select public.remove_appointment_item(id) from public.appointment_items where appointment_id = (select v from ids where k='s2')$$,
   'Venda precisa de pelo menos um produto.', 'venda não fica sem produto');
+
+-- Venda errada é cancelada antes de receber; venda paga é estornada.
+select t.login((select v from ids where k='pro'));
+select throws_ok($$select public.cancel_counter_sale((select v from ids where k='s2'), 'Duplicada')$$,
+  'Sem permissão.', 'profissional não cancela venda');
+select t.login((select v from ids where k='rec'));
+select is((public.cancel_counter_sale((select v from ids where k='s2'), 'Duplicada')).status, 'cancelled', 'recepção cancela a venda aguardando');
+select is((select data->>'reason' from public.appointment_events where appointment_id = (select v from ids where k='s2') and event = 'cancelled'),
+  'Duplicada', 'cancelamento grava o motivo');
+select throws_ok($$select public.cancel_counter_sale((select v from ids where k='s1'), 'Errada')$$,
+  'Atendimento não pode mudar deste status.', 'venda paga não é cancelada, é estornada');
+select throws_ok($$select public.cancel_counter_sale((select v from ids where k='a2'), 'Errada')$$,
+  'Atendimento não pode mudar deste status.', 'só venda no balcão');
+select t.login((select v from ids where k='ana'));
+select isnt((public.refund_appointment((select v from ids where k='s1'), 'Devolveu a pomada')).refunded_at, null, 'admin estorna venda paga');
 
 select t.logout();
 select throws_ok($$

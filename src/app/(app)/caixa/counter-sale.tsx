@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2, Plus, ShoppingBag, X } from "lucide-react";
 import { toast } from "sonner";
 import { CustomerPicker } from "@/components/customers/customer-picker";
@@ -11,8 +11,9 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ConfirmBox } from "../agenda/appointment-sheet";
 import { selectClass } from "../agenda/new-appointment";
-import { createCounterSale } from "./actions";
+import { cancelCounterSale, createCounterSale, refundAppointment } from "./actions";
 
 export type SaleProduct = { id: string; name: string; priceCents: number };
 
@@ -130,5 +131,42 @@ export function CounterSaleButton({ products }: { products: SaleProduct[] }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** Desfaz uma venda: cancela antes de receber (admin/recepção) ou estorna depois (admin). */
+export function UndoSaleButton({ id, mode }: { id: string; mode: "cancel" | "refund" }) {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const cancel = mode === "cancel";
+  if (!confirming) {
+    return (
+      <Button variant="ghost" className="h-11" onClick={() => setConfirming(true)}>
+        {cancel ? "Cancelar venda" : "Estornar"}
+      </Button>
+    );
+  }
+  return (
+    <div className="w-full">
+      <ConfirmBox
+        message={
+          cancel
+            ? "Cancelar esta venda? Nada foi recebido nem saiu do estoque."
+            : "Estornar esta venda? O valor sai do caixa aberto e os produtos voltam ao estoque."
+        }
+        withReason
+        reasonRequired={!cancel}
+        confirmLabel={cancel ? "Cancelar venda" : "Confirmar estorno"}
+        pending={pending}
+        onBack={() => setConfirming(false)}
+        onConfirm={(reason) =>
+          startTransition(async () => {
+            const result = cancel ? await cancelCounterSale(id, reason) : await refundAppointment(id, reason);
+            if (result.ok) toast.success(cancel ? "Venda cancelada." : "Venda estornada.");
+            else toast.error(result.error);
+          })
+        }
+      />
+    </div>
   );
 }

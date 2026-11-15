@@ -730,6 +730,32 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"cancel_counter_sale":
+{ Args: { "p_appointment_id": string,"p_reason"?: string }; Returns: {
+              "arrived_at": string | null,
+"created_at": string,
+"created_by": string | null,
+"customer_id": string | null,
+"discount_cents": number,
+"duration_minutes": number,
+"ends_at": string | null,
+"id": string,
+"kind": string,
+"notes": string | null,
+"professional_id": string | null,
+"refunded_at": string | null,
+"salon_id": string,
+"starts_at": string | null,
+"status": string,
+"total_cents": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "appointments"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "cash_session_expected":
 { Args: { "p_session_id": string }; Returns: Json
                            },

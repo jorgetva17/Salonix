@@ -3,11 +3,12 @@ import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
 import { EmptyState } from "@/components/states/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PAYMENT_METHOD_LABELS, PAYMENT_METHODS, type PaymentMethod } from "@/lib/cash/methods";
+import { localDayRange, todayIn } from "@/lib/agenda/time";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { requireRole } from "@/lib/salon/active-salon";
 import { createServerClient } from "@/lib/supabase/server";
 import { CloseCashForm, ConfirmPixButton, OpenCashForm } from "./cash-client";
-import { CounterSaleButton } from "./counter-sale";
+import { CounterSaleButton, UndoSaleButton } from "./counter-sale";
 import { PaymentDialog } from "./payment-dialog";
 
 export const metadata = { title: "Caixa · Salonix" };
@@ -22,7 +23,8 @@ function toSummary(json: Record<string, number>) {
 }
 
 export default async function CashPage() {
-  const { salon } = await requireRole(["admin", "reception"]);
+  const { salon, membership } = await requireRole(["admin", "reception"]);
+  const isAdmin = membership.role === "admin";
   const tz = salon.timezone;
   const supabase = await createServerClient();
 
@@ -32,6 +34,7 @@ export default async function CashPage() {
     { data: awaiting, error: e4 },
     { data: pixPending, error: e5 },
     { data: products, error: e7 },
+    { data: paidSales, error: e8 },
   ] = await Promise.all([
     supabase.from("cash_sessions").select("id, opened_at, opening_cents").eq("salon_id", salon.id).is("closed_at", null).maybeSingle(),
     supabase
@@ -64,8 +67,17 @@ export default async function CashPage() {
       .eq("active", true)
       .not("sale_price_cents", "is", null)
       .order("name"),
+    // Vendas no balcão recebidas hoje: é daqui que se estorna uma devolução.
+    supabase
+      .from("appointments")
+      .select("id, kind, total_cents, discount_cents, arrived_at, refunded_at, customers(name)")
+      .eq("salon_id", salon.id)
+      .eq("kind", "sale")
+      .eq("status", "paid")
+      .gte("arrived_at", localDayRange(todayIn(tz), tz).from)
+      .order("arrived_at", { ascending: false }),
   ]);
-  if (e1 || e2 || e4 || e5 || e7) throw e1 ?? e2 ?? e4 ?? e5 ?? e7;
+  if (e1 || e2 || e4 || e5 || e7 || e8) throw e1 ?? e2 ?? e4 ?? e5 ?? e7 ?? e8;
   const saleLabel = (a: { kind: string; customers: { name: string } | null }) =>
     a.customers?.name ?? (a.kind === "sale" ? "Venda no balcão" : "");
 
@@ -143,7 +155,7 @@ export default async function CashPage() {
           ) : (
             <ul className="divide-y" data-testid="awaiting-payment">
               {awaiting.map((a) => (
-                <li key={a.id} className="flex items-center gap-3 py-3">
+                <li key={a.id} className="flex flex-wrap items-center gap-3 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{saleLabel(a)}</p>
                     <p className="text-sm text-muted-foreground">
@@ -154,12 +166,37 @@ export default async function CashPage() {
                     appointment={{ id: a.id, customerName: saleLabel(a), totalCents: a.total_cents }}
                     cashOpen={Boolean(open)}
                   />
+                  {a.kind === "sale" && <UndoSaleButton id={a.id} mode="cancel" />}
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
       </Card>
+
+      {paidSales.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendas no balcão de hoje</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y" data-testid="paid-sales">
+              {paidSales.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{saleLabel(a)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {a.arrived_at && formatDateTime(a.arrived_at, tz)} · {formatBRL(a.total_cents - a.discount_cents)}
+                      {a.refunded_at && " · Estornada"}
+                    </p>
+                  </div>
+                  {isAdmin && !a.refunded_at && <UndoSaleButton id={a.id} mode="refund" />}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {pixPending.length > 0 && (
         <Card>

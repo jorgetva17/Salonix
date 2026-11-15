@@ -106,3 +106,13 @@ export async function createCounterSale(_prev: FormState, formData: FormData): P
   revalidatePath("/caixa");
   return { ok: true, message: "Venda criada. Receba em Aguardando pagamento." };
 }
+
+export async function cancelCounterSale(id: string, reason: string): Promise<ActionResult> {
+  await requireRole(["admin", "reception"]);
+  if (!z.uuid().safeParse(id).success) return { ok: false, error: "Venda inválida." };
+  const supabase = await createServerClient();
+  const { error } = await supabase.rpc("cancel_counter_sale", { p_appointment_id: id, p_reason: reason.trim().slice(0, 200) });
+  if (error) return { ok: false, error: rpcError(error.message, "Não foi possível cancelar a venda.") };
+  revalidatePath("/caixa");
+  return { ok: true };
+}

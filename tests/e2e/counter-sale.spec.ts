@@ -31,6 +31,27 @@ test("venda no balcão e produto no atendimento", async ({ page }) => {
   await expect(page.getByTestId("movement").first()).toContainText("Saída -2 un");
   await expect(page.getByTestId("movement").first()).toContainText("Venda no balcão");
 
+  // Venda criada por engano é cancelada; a paga é estornada e a pomada volta.
+  await page.goto("/caixa");
+  await page.getByRole("button", { name: "Venda no balcão" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Produto 1").selectOption({ label: "Pomada · R$ 35,00" });
+  await dialog.getByRole("button", { name: "Criar venda" }).click();
+  await expect(dialog).toBeHidden();
+  const pending = page.getByTestId("awaiting-payment").getByRole("listitem").filter({ hasText: "Venda no balcão" });
+  await pending.getByRole("button", { name: "Cancelar venda" }).click();
+  await pending.getByRole("button", { name: "Cancelar venda" }).click();
+  await expect(page.getByText("Nada para receber")).toBeVisible();
+
+  const paid = page.getByTestId("paid-sales").getByRole("listitem").first();
+  await paid.getByRole("button", { name: "Estornar" }).click();
+  await paid.getByLabel("Motivo").fill("Cliente devolveu");
+  await paid.getByRole("button", { name: "Confirmar estorno" }).click();
+  await expect(paid).toContainText("Estornada");
+  await expect(page.getByTestId("expected-cash")).toHaveText("R$ 100,00");
+  await page.goto("/estoque");
+  await expect(page.getByTestId("stock-item-Pomada").getByTestId("stock-quantity")).toHaveText("10 un");
+
   // Produto num atendimento em curso.
   await bookTomorrow(page, "Gabi Teste", "10:00");
   const gabi = page.getByTestId("agenda-appointment").filter({ hasText: "Gabi Teste" });
