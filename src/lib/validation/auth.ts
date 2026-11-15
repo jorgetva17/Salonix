@@ -39,6 +39,10 @@ export const createSalonSchema = z.object({
 export const inviteSchema = z.object({
   email,
   role: z.enum(["admin", "reception", "professional"], { error: "Escolha um perfil" }),
+  professionalId: z.string().uuid().optional().or(z.literal("").transform(() => undefined)),
+}).refine((v) => !v.professionalId || v.role === "professional", {
+  path: ["professionalId"],
+  error: "Só é possível vincular um cadastro de profissional ao perfil Profissional",
 });
 
 /** Converte erros do Zod em { campo: mensagem } (primeira mensagem de cada campo). */

@@ -59,6 +59,23 @@ describe("inviteMember", () => {
     expect(inviteUserByEmail).not.toHaveBeenCalled();
   });
 
+  it("vincula o convite a um profissional existente", async () => {
+    insert.mockResolvedValue({ error: null });
+    inviteUserByEmail.mockResolvedValue({ error: null });
+    const f = form("pro@teste.com", "professional");
+    f.set("professionalId", "2b1f6e0e-6c0a-4f6f-8a57-0f0c6f2a9b11");
+    expect(await inviteMember(null, f)).toEqual({ ok: true });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ professional_id: "2b1f6e0e-6c0a-4f6f-8a57-0f0c6f2a9b11" }));
+  });
+
+  it("não vincula profissional a perfil diferente de Profissional", async () => {
+    const f = form("rec@teste.com", "reception");
+    f.set("professionalId", "2b1f6e0e-6c0a-4f6f-8a57-0f0c6f2a9b11");
+    const result = await inviteMember(null, f);
+    expect(result).toMatchObject({ ok: false, fieldErrors: { professionalId: expect.any(String) } });
+    expect(insert).not.toHaveBeenCalled();
+  });
+
   it("valida o e-mail", async () => {
     const result = await inviteMember(null, form("invalido"));
     expect(result).toMatchObject({ ok: false, fieldErrors: { email: "Informe um e-mail válido" } });

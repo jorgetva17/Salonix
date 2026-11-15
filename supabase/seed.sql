@@ -41,3 +41,32 @@ begin
     on conflict (salon_id, user_id) do nothing;
   end loop;
 end $$;
+
+-- Cadastros de demonstração
+insert into public.services (id, salon_id, name, duration_minutes, price_cents) values
+  ('5a10a000-0000-4000-8000-0000000000c1', '5a10a000-0000-4000-8000-000000000001', 'Corte', 30, 4500),
+  ('5a10a000-0000-4000-8000-0000000000c2', '5a10a000-0000-4000-8000-000000000001', 'Barba', 20, 3000),
+  ('5a10a000-0000-4000-8000-0000000000c3', '5a10a000-0000-4000-8000-000000000001', 'Corte + Barba', 50, 7000)
+on conflict (id) do nothing;
+
+insert into public.professionals (id, salon_id, user_id, name, color) values
+  ('5a10a000-0000-4000-8000-0000000000d1', '5a10a000-0000-4000-8000-000000000001', '5a10a000-0000-4000-8000-0000000000a3', 'Paulo', '#1B3B4B'),
+  ('5a10a000-0000-4000-8000-0000000000d2', '5a10a000-0000-4000-8000-000000000001', null, 'Marcos', '#F59E0B')
+on conflict (id) do nothing;
+
+insert into public.professional_default_commissions (professional_id, salon_id, commission_percent) values
+  ('5a10a000-0000-4000-8000-0000000000d1', '5a10a000-0000-4000-8000-000000000001', 40),
+  ('5a10a000-0000-4000-8000-0000000000d2', '5a10a000-0000-4000-8000-000000000001', 35)
+on conflict (professional_id) do nothing;
+
+insert into public.professional_schedules (salon_id, professional_id, weekday, start_time, end_time)
+select '5a10a000-0000-4000-8000-000000000001', p.id, d, t.s, t.e
+from (values ('5a10a000-0000-4000-8000-0000000000d1'::uuid), ('5a10a000-0000-4000-8000-0000000000d2'::uuid)) p(id),
+     generate_series(1, 6) d,
+     (values ('09:00'::time, '12:00'::time), ('13:00'::time, '18:00'::time)) t(s, e)
+where not exists (select 1 from public.professional_schedules);
+
+insert into public.customers (salon_id, name, phone)
+select '5a10a000-0000-4000-8000-000000000001', v.n, v.p
+from (values ('Maria Souza', '85999990001'), ('João Pereira', '85999990002'), ('Ana Lima', null)) v(n, p)
+where not exists (select 1 from public.customers);

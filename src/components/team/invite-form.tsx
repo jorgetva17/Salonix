@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ROLE_LABELS } from "@/lib/navigation";
 import type { ActionResult } from "@/lib/action-result";
 
-export function InviteForm() {
+export function InviteForm({ professionals = [] }: { professionals?: { id: string; name: string }[] }) {
   const [state, action] = useActionState<ActionResult | null, FormData>(inviteMember, null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -38,6 +38,18 @@ export function InviteForm() {
           ))}
         </select>
       </div>
+      {professionals.length > 0 ? (
+        <div className="grid gap-1.5 sm:col-span-3">
+          <Label htmlFor="professionalId">Vincular a um profissional já cadastrado (opcional)</Label>
+          <select id="professionalId" name="professionalId" defaultValue="" className="min-h-11 rounded-md border border-input bg-card px-3 text-base md:text-sm">
+            <option value="">Nenhum</option>
+            {professionals.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          {fieldError("professionalId") ? <p role="alert" className="text-sm text-destructive">{fieldError("professionalId")}</p> : null}
+        </div>
+      ) : null}
       <SubmitButton pendingText="Enviando…">Convidar</SubmitButton>
     </form>
   );

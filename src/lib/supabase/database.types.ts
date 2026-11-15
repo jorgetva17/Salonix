@@ -66,9 +66,52 @@ export type Database = {
           status: "pending" | "accepted" | "revoked";
           created_at: string;
           accepted_at: string | null;
+          professional_id: string | null;
         };
-        Insert: { salon_id: string; email: string; role: SalonRole; invited_by?: string | null; status?: "pending" | "accepted" | "revoked" };
+        Insert: { salon_id: string; email: string; role: SalonRole; invited_by?: string | null; professional_id?: string | null; status?: "pending" | "accepted" | "revoked" };
         Update: Partial<Database["public"]["Tables"]["salon_invites"]["Row"]>;
+        Relationships: [];
+      };
+      services: {
+        Row: { id: string; salon_id: string; name: string; duration_minutes: number; price_cents: number; active: boolean } & Timestamps;
+        Insert: { salon_id: string; name: string; duration_minutes: number; price_cents: number; active?: boolean };
+        Update: Partial<Database["public"]["Tables"]["services"]["Row"]>;
+        Relationships: [];
+      };
+      professionals: {
+        Row: { id: string; salon_id: string; user_id: string | null; name: string; color: string; active: boolean } & Timestamps;
+        Insert: { salon_id: string; name: string; color?: string; active?: boolean; user_id?: string | null };
+        Update: Partial<Database["public"]["Tables"]["professionals"]["Row"]>;
+        Relationships: [];
+      };
+      professional_default_commissions: {
+        Row: { professional_id: string; salon_id: string; commission_percent: number } & Timestamps;
+        Insert: { professional_id: string; salon_id: string; commission_percent: number };
+        Update: Partial<Database["public"]["Tables"]["professional_default_commissions"]["Row"]>;
+        Relationships: [];
+      };
+      professional_schedules: {
+        Row: { id: string; salon_id: string; professional_id: string; weekday: number; start_time: string; end_time: string } & Timestamps;
+        Insert: { salon_id: string; professional_id: string; weekday: number; start_time: string; end_time: string };
+        Update: Partial<Database["public"]["Tables"]["professional_schedules"]["Row"]>;
+        Relationships: [];
+      };
+      schedule_blocks: {
+        Row: { id: string; salon_id: string; professional_id: string; starts_at: string; ends_at: string; reason: string } & Timestamps;
+        Insert: { salon_id: string; professional_id: string; starts_at: string; ends_at: string; reason?: string };
+        Update: Partial<Database["public"]["Tables"]["schedule_blocks"]["Row"]>;
+        Relationships: [];
+      };
+      professional_service_commissions: {
+        Row: { id: string; salon_id: string; professional_id: string; service_id: string; commission_percent: number } & Timestamps;
+        Insert: { salon_id: string; professional_id: string; service_id: string; commission_percent: number };
+        Update: Partial<Database["public"]["Tables"]["professional_service_commissions"]["Row"]>;
+        Relationships: [];
+      };
+      customers: {
+        Row: { id: string; salon_id: string; name: string; phone: string | null; notes: string } & Timestamps;
+        Insert: { salon_id: string; name: string; phone?: string | null; notes?: string };
+        Update: Partial<Database["public"]["Tables"]["customers"]["Row"]>;
         Relationships: [];
       };
       feature_flags: {

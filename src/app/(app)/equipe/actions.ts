@@ -21,6 +21,7 @@ export async function inviteMember(_prev: ActionResult | null, formData: FormDat
   const parsed = inviteSchema.safeParse({
     email: String(formData.get("email") ?? ""),
     role: String(formData.get("role") ?? ""),
+    professionalId: String(formData.get("professionalId") ?? ""),
   });
   if (!parsed.success) {
     return { ok: false, error: "Confira os campos", fieldErrors: fieldErrorsOf(parsed.error) };
@@ -35,6 +36,7 @@ export async function inviteMember(_prev: ActionResult | null, formData: FormDat
     email: parsed.data.email,
     role: parsed.data.role,
     invited_by: user?.id ?? null,
+    professional_id: parsed.data.professionalId ?? null,
   });
   if (insertError) {
     if (insertError.code === "23505") {

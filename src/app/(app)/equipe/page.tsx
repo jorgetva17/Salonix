@@ -25,6 +25,13 @@ export default async function EquipePage() {
     : { data: [] };
   const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
 
+  const { data: unlinked } = await supabase
+    .from("professionals")
+    .select("id, name")
+    .eq("active", true)
+    .is("user_id", null)
+    .order("name");
+
   const { data: invites } = await supabase
     .from("salon_invites")
     .select("id, email, role, created_at")
@@ -41,7 +48,7 @@ export default async function EquipePage() {
           <CardDescription>A pessoa recebe um e-mail com o link para entrar no salão com o perfil escolhido.</CardDescription>
         </CardHeader>
         <CardContent>
-          <InviteForm />
+          <InviteForm professionals={unlinked ?? []} />
         </CardContent>
       </Card>
       <MemberList
