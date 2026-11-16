@@ -29,7 +29,9 @@ export function ThemeToggle({ initial, tone = "surface" }: { initial: ThemePrefe
         setSelected(previous);
         setTheme(previous);
         toast.error(result.error);
+        return;
       }
+      toast.success(`Tema definido como "${OPTIONS.find((o) => o.value === value)?.label}".`);
     });
   };
 
