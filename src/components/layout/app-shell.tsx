@@ -39,7 +39,7 @@ export function AppShell({ membership, memberships, userName, logo, themePrefere
           activeSalonId={membership.salonId}
           className="mb-6 px-2"
         />
-        <nav aria-label="Principal" className="flex-1">
+        <nav aria-label="Principal" className="min-h-0 flex-1 overflow-y-auto">
           <NavLinks role={membership.role} />
         </nav>
         <AccountBlock userName={userName} membership={membership} theme={themePreference} tone="sidebar" />
